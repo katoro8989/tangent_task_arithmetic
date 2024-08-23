@@ -17,8 +17,8 @@ export WANDB_API_KEY="412e8240b034b61dae066dfd1b3714cdde7e535e"
 
 
 # ======== Configuration ========
-PROGRAM="finetune_wandb.py"
-pushd /home/pj24001778/ku40001243/workspace/tangent_task_arithmetic/src/
+PROGRAM="src/finetune_wandb.py"
+pushd /home/pj24001778/ku40001243/workspace/tangent_task_arithmetic/
 
 # Model & Dataset & Optimizer Setting
 
