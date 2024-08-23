@@ -185,7 +185,6 @@ def finetune(rank, args, group):
                 )
                 run.log({
                     'step': step,
-                    'lr': scheduler.get_last_lr()[0],
                     'train_loss': loss.item(),
                     'train_accuracy': accuracy, 
                 })
