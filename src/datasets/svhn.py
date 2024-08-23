@@ -7,7 +7,7 @@ import numpy as np
 class SVHN:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser('~/dataset'),
                  batch_size=128,
                  num_workers=16):
 

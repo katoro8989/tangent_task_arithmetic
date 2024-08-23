@@ -5,7 +5,7 @@ import torchvision.datasets as datasets
 class SUN397:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser('~/dataset'),
                  batch_size=32,
                  num_workers=16):
         # Data loading code

@@ -15,7 +15,7 @@ class EuroSATBase:
     def __init__(self,
                  preprocess,
                  test_split,
-                 location='~/datasets',
+                 location='~/dataset',
                  batch_size=32,
                  num_workers=16):
         # Data loading code
@@ -60,7 +60,7 @@ class EuroSATBase:
 class EuroSAT(EuroSATBase):
     def __init__(self,
                  preprocess,
-                 location='~/datasets',
+                 location='~/dataset',
                  batch_size=32,
                  num_workers=16):
         super().__init__(preprocess, 'test', location, batch_size, num_workers)
@@ -69,7 +69,7 @@ class EuroSAT(EuroSATBase):
 class EuroSATVal(EuroSATBase):
     def __init__(self,
                  preprocess,
-                 location='~/datasets',
+                 location='~/dataset',
                  batch_size=32,
                  num_workers=16):
         super().__init__(preprocess, 'val', location, batch_size, num_workers)

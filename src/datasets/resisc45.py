@@ -281,7 +281,7 @@ class RESISC45Dataset(VisionClassificationDataset):
 class RESISC45:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser('~/dataset'),
                  batch_size=32,
                  num_workers=16):
 
