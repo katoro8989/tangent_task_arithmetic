@@ -16,7 +16,7 @@ from src.modeling import ImageClassifier, ImageEncoder
 from src.utils import LabelSmoothing, cosine_lr
 
 
-def finetune(rank, args):
+def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
@@ -256,4 +256,4 @@ if __name__ == "__main__":
 
         group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
     
-        torch.multiprocessing.spawn(finetune, args=(args,), nprocs=args.world_size)
+        torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
