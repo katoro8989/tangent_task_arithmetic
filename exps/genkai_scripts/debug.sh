@@ -1,5 +1,5 @@
 #!/bin/sh
-#PJM -L rscgrp=b-batch
+#PJM -L rscgrp=b-pj24001778
 #PJM -L gpu=2
 #PJM -L elapse=00:03:00
 #PJM -o result/%j.out
@@ -7,7 +7,7 @@
 
 
 # ======== Module, Virtualenv and Other Dependencies ======
-source ../envs/genkai_env.sh
+source ../env/genkai_env.sh
 echo "PYTHON Environment: $PYTHON_PATH"
 export PYTHONPATH=.
 export PATH=$PYTHON_PATH:$PATH
