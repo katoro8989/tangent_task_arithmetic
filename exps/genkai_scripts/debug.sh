@@ -7,7 +7,7 @@
 
 
 # ======== Module, Virtualenv and Other Dependencies ======
-source ../env/genkai_env.sh
+source ../envs/genkai_env.sh
 echo "PYTHON Environment: $PYTHON_PATH"
 export PYTHONPATH=.
 export PATH=$PYTHON_PATH:$PATH
