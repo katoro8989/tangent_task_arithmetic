@@ -32,8 +32,8 @@ eval "module avail nccl"
 
 # 使用するモジュールをロード
 module load cuda/11.8.0
-module load cudnn/8.9.7
-module load nccl/2.20.5
+module load cudnn/8.6/8.6.0
+module load nccl/2.16/2.16.2-1
 
 eval "module list"
 
