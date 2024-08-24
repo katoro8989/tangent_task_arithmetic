@@ -27,6 +27,8 @@ export CLUSTER_NAME
 # export LD_LIBRARY_PATH=/apps/t4/rhel9/free/nccl/2.20.5/cuda12.3.2/lib:$LD_LIBRARY_PATH
 
 # echo $LD_LIBRARY_PATH
+eval "module avail cudnn"
+eval "module avail nccl"
 
 # 使用するモジュールをロード
 module load cuda/11.8.0
@@ -34,6 +36,7 @@ module load cudnn/8.9.7
 module load nccl/2.20.5
 
 eval "module list"
+
 
 # CUDA, cuDNN, NCCLのライブラリパスを統一する
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
