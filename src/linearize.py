@@ -73,7 +73,7 @@ class LinearizedModel(nn.Module):
         """Computes the linearized model output using a first-order Taylor decomposition."""
         dparams = [p - p0 for p, p0 in zip(self.params, self.params0)]
         out, dp = F.jvp(
-            lambda param: self.func0(param, x),
+            lambda *param: self.func0(param, x),
             tuple(self.params0),  # primals
             tuple(dparams),        # tangents
         )
