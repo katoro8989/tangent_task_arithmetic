@@ -27,8 +27,7 @@ export CLUSTER_NAME
 # export LD_LIBRARY_PATH=/apps/t4/rhel9/free/nccl/2.20.5/cuda12.3.2/lib:$LD_LIBRARY_PATH
 
 # echo $LD_LIBRARY_PATH
-eval "module avail cudnn"
-eval "module avail nccl"
+eval "module avail"
 
 # 使用するモジュールをロード
 module load cuda/11.8.0
@@ -53,7 +52,7 @@ eval "module list"
 # export LD_LIBRARY_PATH=/apps/t4/rhel9/free/nccl/2.20.5/cuda11.8.0/lib:$LD_LIBRARY_PATH
 
 # # 確認
-# echo $LD_LIBRARY_PATH
+echo $MODULEPATH
 
 
 eval "nvidia-smi"
