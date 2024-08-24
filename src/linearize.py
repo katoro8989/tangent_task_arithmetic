@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from functorch import make_functional_with_buffers
 from torch.func import jvp
+import torch.autograd.functional as F
+
 
 
 from src.modeling import ImageEncoder
@@ -53,15 +55,25 @@ class LinearizedModel(nn.Module):
         for p in self.params:
             p.requires_grad = True
 
+    # def __call__(self, x) -> torch.Tensor:
+    #     """Computes the linearized model output using a first-order Taylor decomposition."""
+    #     dparams = [p - p0 for p, p0 in zip(self.params, self.params0)]
+    #     out, dp = jvp(
+    #         lambda param: self.func0(param, x),
+    #         (tuple(self.params0),),
+    #         (tuple(dparams),),
+    #     )
+    #     return out + dp
     def __call__(self, x) -> torch.Tensor:
         """Computes the linearized model output using a first-order Taylor decomposition."""
         dparams = [p - p0 for p, p0 in zip(self.params, self.params0)]
-        out, dp = jvp(
+        out, dp = F.jvp(
             lambda param: self.func0(param, x),
-            (tuple(self.params0),),
-            (tuple(dparams),),
+            (tuple(self.params0),),  # primals
+            (tuple(dparams),)        # tangents
         )
         return out + dp
+
 
 
 class LinearizedImageEncoder(abc.ABC, nn.Module):
