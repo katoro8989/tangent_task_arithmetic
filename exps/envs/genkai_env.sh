@@ -1,5 +1,5 @@
 # Pyenv VirtualEnv Environment
-PYTHON_PATH="/home/pj24001778/ku40001243/env/py3916/bin"
+PYTHON_PATH="/home/pj24001778/ku40001243/env/tangent/bin"
 export PYTHON_PATH
 
 # Cluster
