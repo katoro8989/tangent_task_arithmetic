@@ -3,7 +3,9 @@ import os
 
 import torch
 import torch.nn as nn
-from functorch import jvp, make_functional_with_buffers
+from functorch import make_functional_with_buffers
+from torch.func import jvp
+
 
 from src.modeling import ImageEncoder
 from src.utils import DotDict

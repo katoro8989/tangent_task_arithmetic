@@ -1,7 +1,7 @@
 #!/bin/sh
-#PJM -L rscgrp=b-pj24001778
-#PJM -L gpu=2
-#PJM -L elapse=00:03:00
+#PJM -L rscgrp=b-batch
+#PJM -L node=1
+#PJM -L elapse=00:10:00
 #PJM -o result/%j.out
 #PJM -e result/%j.err
 
@@ -32,9 +32,9 @@ upper_bound=100
 # Define Setting
 
 PYTHON_ARGS="--port=12370 \
-            --finetuning-mode=standard \
+            --finetuning-mode=linear \
             --model=ViT-B-32 \
-            --world-size=2 \
+            --world-size=4 \
             "
 # ======== Execution ========
 CMD="python ${PROGRAM} ${PYTHON_ARGS}"
