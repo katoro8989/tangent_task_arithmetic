@@ -2,9 +2,6 @@ import abc
 import os
 
 import torch
-torch.backends.cuda.enable_flash_sdp(False)
-torch.backends.cuda.enable_mem_efficient_sdp(False)
-
 import torch.nn as nn
 from functorch import jvp, make_functional_with_buffers
 
