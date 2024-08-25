@@ -216,22 +216,22 @@ if __name__ == "__main__":
     train_datasets = [
         # "Cars",
         "DTD",
-        "EuroSAT",
-        "GTSRB",
-        "MNIST",
-        "RESISC45",
-        "SUN397",
-        "SVHN",
+        # "EuroSAT",
+        # "GTSRB",
+        # "MNIST",
+        # "RESISC45",
+        # "SUN397",
+        # "SVHN",
     ]
     epochs = {
         # "Cars": 35,
         "DTD": 76,
-        "EuroSAT": 12,
-        "GTSRB": 11,
-        "MNIST": 5,
-        "RESISC45": 15,
-        "SUN397": 14,
-        "SVHN": 4,
+        # "EuroSAT": 12,
+        # "GTSRB": 11,
+        # "MNIST": 5,
+        # "RESISC45": 15,
+        # "SUN397": 14,
+        # "SVHN": 4,
     }
 
     for dataset in train_datasets:
@@ -246,9 +246,9 @@ if __name__ == "__main__":
         args.num_grad_accumulation = 2 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"checkpoints_{args.seed}/{args.model}"
+            args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
         else:
-            args.save = f"checkpoints/{args.model}"
+            args.save = f"/mnt/data/checkpoints/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
