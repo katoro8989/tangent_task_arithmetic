@@ -7,9 +7,9 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 
 args = parse_arguments()
 if args.seed is not None:
-    args.save = f"checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints/checkpoints_{args.seed}/{args.model}"
 else:
-    args.save = f"checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints/checkpoints/{args.model}"
 
 accuracies = {}
 
