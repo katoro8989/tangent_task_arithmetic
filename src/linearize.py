@@ -9,13 +9,6 @@ from src.modeling import ImageEncoder
 from src.utils import DotDict
 
 
-
-
-
-from src.modeling import ImageEncoder
-from src.utils import DotDict
-
-
 class LinearizedModel(nn.Module):
     """Creates a linearized version of a nn.Module.
 
@@ -67,47 +60,8 @@ class LinearizedModel(nn.Module):
             (tuple(dparams),),
         )
         return out + dp
-    
-# class LinearizedModel(nn.Module):
-#     """Creates a linearized version of a nn.Module."""
 
-#     def __init__(self, model: nn.Module, init_model: nn.Module = None) -> None:
-#         """Initializes the linearized model."""
-#         super().__init__()
-#         if init_model is None:
-#             init_model = model
 
-#         func0, params0, self.buffers0 = make_functional_with_buffers(
-#             init_model.eval(), disable_autograd_tracking=True
-#         )
-#         self.func0 = lambda params, x: func0(params, self.buffers0, x)
-
-#         _, params, _ = make_functional_with_buffers(
-#             model, disable_autograd_tracking=True
-#         )
-
-#         self.params = nn.ParameterList(params)
-#         self.params0 = nn.ParameterList(params0)
-#         self._model_name = model.__class__.__name__
-
-#         # The intial parameters are not trainable.
-#         for p in self.params0:
-#             p.requires_grad = False
-
-#         # The params are.
-#         for p in self.params:
-#             p.requires_grad = True
-
-#     def __call__(self, x) -> torch.Tensor:
-#         """Computes the linearized model output using a first-order Taylor decomposition."""
-#         dparams = [p - p0 for p, p0 in zip(self.params, self.params0)]
-#         out, dp = jvp(
-#             lambda param: self.func0(param, x),
-#             (tuple(self.params0),),
-#             (tuple(dparams),),
-#         )
-#         return out + dp
-    
 class LinearizedImageEncoder(abc.ABC, nn.Module):
     """Creates a linearized version of an image encoder."""
 
@@ -183,5 +137,3 @@ class LinearizedImageEncoder(abc.ABC, nn.Module):
         state_dict.pop("model_name")
         taylorized_encoder.load_state_dict(state_dict)
         return taylorized_encoder
-    
-
