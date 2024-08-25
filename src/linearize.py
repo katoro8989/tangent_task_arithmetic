@@ -127,6 +127,7 @@ class LinearizedImageEncoder(abc.ABC, nn.Module):
         """
         print(f"Loading image encoder from {filename}")
         state_dict = torch.load(filename, map_location="cpu")
+        print(f"Loaded object type: {type(state_dict)}")
 
         # ImageEncoder expects a DotDict
         args = DotDict({"model": state_dict["model_name"]})
