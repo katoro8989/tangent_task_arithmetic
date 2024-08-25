@@ -60,7 +60,7 @@ class EuroSATBase:
 class EuroSAT(EuroSATBase):
     def __init__(self,
                  preprocess,
-                 location='~/dataset',
+                 location='/mnt/data/dataset',
                  batch_size=32,
                  num_workers=16):
         super().__init__(preprocess, 'test', location, batch_size, num_workers)
