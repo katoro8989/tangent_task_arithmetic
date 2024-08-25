@@ -9,7 +9,7 @@ def parse_arguments():
     parser.add_argument(
         "--data-location",
         type=str,
-        default=os.path.expanduser("~/dataset"),
+        default=os.path.expanduser("/mnt/data/dataset"),
         help="The root directory for the datasets.",
     )
     parser.add_argument(
