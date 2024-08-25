@@ -25,7 +25,7 @@ elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
 
 for dataset in [
-    # "Cars",
+    "Cars",
     "DTD",
     "EuroSAT",
     "GTSRB",
@@ -37,7 +37,11 @@ for dataset in [
     print("*" * 100)
     print(f"Evaluating on {dataset}")
 
-    pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
+    pretrained_checkpoint = (
+        f"{args.save}/{dataset}Val/linear_zeroshot.pt"
+        if args.finetuning_mode == "linear"
+        else f"{args.save}/{dataset}Val/zeroshot.pt"
+    )
 
     finetuned_checkpoint = (
         f"{args.save}/{dataset}Val/linear_finetuned.pt"
