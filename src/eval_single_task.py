@@ -81,10 +81,10 @@ for dataset in [
         )["top1"]
 
 
-if args.finetuning_mode == "none":
-    # Evaluate zero-shot accuracy on ImageNet
-    for split in ["ImageNetVal", "ImageNet"]:
-        accuracies[split] = eval_single_dataset(image_encoder, split, args)["top1"]
+# if args.finetuning_mode == "none":
+#     # Evaluate zero-shot accuracy on ImageNet
+#     for split in ["ImageNetVal", "ImageNet"]:
+#         accuracies[split] = eval_single_dataset(image_encoder, split, args)["top1"]
 
 # Save results
 if args.finetuning_mode == "none":
