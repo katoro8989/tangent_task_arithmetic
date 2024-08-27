@@ -11,9 +11,9 @@ args = parse_arguments()
 
 
 if args.seed is not None:
-    args.save = f"checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
 else:
-    args.save = f"checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints/{args.model}"
 
 with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
     pretrained_accuracies = json.load(f)
