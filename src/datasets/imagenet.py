@@ -176,7 +176,7 @@ imagenet_classnames = [
 class ImageNet:
     def __init__(self,
                  preprocess,
-                 location=os.path.expanduser('~/data'),
+                 location=os.path.expanduser('/mnt/data/dataset'),
                  batch_size=32,
                  num_workers=32):
         self.preprocess = preprocess
