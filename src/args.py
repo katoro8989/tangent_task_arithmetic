@@ -45,7 +45,7 @@ def parse_arguments():
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=64,
+        default=128,
     )
     parser.add_argument(
         "--num-grad-accumulation",
