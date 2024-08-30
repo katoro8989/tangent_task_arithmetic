@@ -122,13 +122,6 @@ class _TaskVector(abc.ABC):
                     )
                     continue
 
-                print(f"Key: {key}")
-                print(f"pretrained_state_dict[{key}].dtype: {pretrained_state_dict[key].dtype}")
-                print(f"self.vector[{key}].dtype: {self.vector[key].dtype}")
-                print(f"pretrained_state_dict[{key}].device: {pretrained_state_dict[key].device}")
-                print(f"self.vector[{key}].device: {self.vector[key].device}")
-
-
                 new_state_dict[key] = (
                     pretrained_state_dict[key] + float(scaling_coef) * self.vector[key]
                 )
