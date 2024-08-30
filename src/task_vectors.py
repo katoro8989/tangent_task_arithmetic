@@ -114,6 +114,7 @@ class _TaskVector(abc.ABC):
             pretrained_model = self._load_checkpoint(pretrained_checkpoint)
             new_state_dict = {}
             pretrained_state_dict = pretrained_model.state_dict()
+
             for key in pretrained_state_dict:
                 if key not in self.vector:
                     print(
@@ -129,7 +130,7 @@ class _TaskVector(abc.ABC):
 
 
                 new_state_dict[key] = (
-                    pretrained_state_dict[key] + scaling_coef * self.vector[key]
+                    pretrained_state_dict[key] + torch.tensor(scaling_coef) * self.vector[key]
                 )
         pretrained_model.load_state_dict(new_state_dict)
         return pretrained_model
