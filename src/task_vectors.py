@@ -135,7 +135,7 @@ class _TaskVector(abc.ABC):
 
 
                 new_state_dict[key] = (
-                    pretrained_state_dict[key] + torch.tensor(scaling_coef) * self.vector[key]
+                    pretrained_state_dict[key] + scaling_coef * self.vector[key]
                 )
         pretrained_model.load_state_dict(new_state_dict)
         return pretrained_model
