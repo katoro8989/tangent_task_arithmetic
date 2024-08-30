@@ -128,11 +128,6 @@ class _TaskVector(abc.ABC):
                 print(f"pretrained_state_dict[{key}].device: {pretrained_state_dict[key].device}")
                 print(f"self.vector[{key}].device: {self.vector[key].device}")
 
-                if torch.all(self.vector[key] == 0):
-                    print(f"self.vector[{key}] is a zero tensor.")
-                    new_state_dict[key] = pretrained_state_dict[key]
-                    continue
-
 
                 new_state_dict[key] = (
                     pretrained_state_dict[key] + scaling_coef * self.vector[key]
