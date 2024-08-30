@@ -74,7 +74,8 @@ for dataset in eval_datasets:
         metric=f"{dataset}Val:top1",
         minimize=True,
         control_metric=f"{control_dataset}Val:top1",
-        control_metric_threshold=0.95 * pretrained_accuracies[control_dataset + "Val"],
+        control_metric_threshold=args.control_threshold
+        * pretrained_accuracies[control_dataset + "Val"],
     )
 
     # Evaluate on the test set with the optimal coefficient.
