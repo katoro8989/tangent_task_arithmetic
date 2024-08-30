@@ -121,8 +121,11 @@ class _TaskVector(abc.ABC):
                     )
                     continue
 
-                print(pretrained_state_dict[key])
-                print(self.vector[key])
+                print(f"Key: {key}")
+                print(f"pretrained_state_dict[{key}].shape: {pretrained_state_dict[key].shape}")
+                print(f"self.vector[{key}].shape: {self.vector[key].shape}")
+                print(f"scaling_coef: {scaling_coef}")
+
                 new_state_dict[key] = (
                     pretrained_state_dict[key] + scaling_coef * self.vector[key]
                 )
