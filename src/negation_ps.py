@@ -33,9 +33,11 @@ print("*" * 100)
 if args.finetuning_mode == "standard":
     print("Evaluating non-linear FT models.")
     ft_accuracies_path = os.path.join(args.save, "ft_accuracies.json")
+    negation_path = os.path.join(args.save, "negations.json")
 elif args.finetuning_mode == "linear":
     print("Evaluating linear FT models.")
     ft_accuracies_path = os.path.join(args.save, "linear_ft_accuracies.json")
+    negation_path = os.path.join(args.save, "linear_negations.json")
 elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
     ft_accuracies_path = os.path.join(args.save, "posthoc_ft_accuracies.json")
@@ -45,9 +47,11 @@ print("*" * 100)
 
 with open(ft_accuracies_path) as f:
     args.finetuning_accuracies = json.load(f)
+with open(negation_path, "r") as file:
+    negation_accuracies = json.load(file)
 
 control_dataset = "ImageNet"
-negation_accuracies = {}
+negation_accuracies_new = {}
 
 for dataset in eval_datasets:
     if args.finetuning_mode == "linear":
@@ -62,12 +66,7 @@ for dataset in eval_datasets:
     # We use the validation set to choose the optimal coefficient.
     args.eval_datasets = [dataset + "Val"]
     args.control_dataset = control_dataset + "Val"
-    val_metrics = evaluate_task_vector(
-        task_vector,
-        pretrained_checkpoint,
-        args,
-        posthoc_linearization=args.finetuning_mode == "posthoc",
-    )
+    val_metrics = negation_accuracies[dataset]["val"]
 
     optimal_coef = find_optimal_coef(
         val_metrics,
@@ -91,18 +90,18 @@ for dataset in eval_datasets:
     print("=" * 100)
     print(f"Test accuracy: {test_metrics[f'{dataset}:top1']}")
 
-    negation_accuracies[dataset] = {
+    negation_accuracies_new[dataset] = {
         "test": test_metrics[f"{dataset}:top1"],
         "test_control": test_metrics[f"{control_dataset}:top1"],
         "val": val_metrics,
     }
 
 if args.finetuning_mode == "standard":
-    save_file = f"{args.save}/negations.json"
+    save_file = f"{args.save}/negations_new.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/linear_negations.json"
+    save_file = f"{args.save}/linear_negations_new.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/posthoc_negations.json"
 
 with open(save_file, "w") as f:
-    json.dump(negation_accuracies, f, indent=4)
+    json.dump(negation_accuracies_new, f, indent=4)
