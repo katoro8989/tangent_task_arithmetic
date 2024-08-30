@@ -76,7 +76,6 @@ for dataset in eval_datasets:
         control_metric_threshold=0.95 * pretrained_accuracies[control_dataset + "Val"],
     )
 
-    print(optimal_coef)
     # Evaluate on the test set with the optimal coefficient.
     args.eval_datasets = [dataset]
     args.control_dataset = control_dataset
