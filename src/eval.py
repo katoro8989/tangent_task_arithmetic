@@ -48,6 +48,39 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
     return metrics
 
+def eval_dp_single_dataset(image_encoder, dataset_name, args):
+    classification_head = get_classification_head(args, dataset_name)
+    model = ImageClassifier(image_encoder, classification_head)
+
+    model.eval()
+    torch.cuda.set_device(2)
+
+    dataset = get_dataset(
+        dataset_name,
+        model.val_preprocess,
+        location=args.data_location,
+        batch_size=args.batch_size,
+    )
+    dataloader = get_dataloader(dataset, is_train=False, args=args, image_encoder=None)
+    device = args.device
+
+    with torch.no_grad():
+        norm_mean_total = 0.
+        for _, data in enumerate(tqdm.tqdm(dataloader)):
+            data = maybe_dictionarize(data)
+            x = data["images"].to(device)
+            y = data["labels"].to(device)
+
+            dps = utils.get_dps(x, model)
+            dp_norms = torch.norm(dps, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
+            norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
+            norm_mean_total += norm_mean_batch.item()
+            
+    metrics = {"dp_norm_ave": norm_mean_total / len(dataset)}
+    print(f"Done evaluating on {dataset_name}. dp_norm_ave: {norm_mean_total / len(dataset)}")
+
+    return metrics
+
 
 def evaluate(image_encoder, args):
     if args.eval_datasets is None:

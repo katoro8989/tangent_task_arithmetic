@@ -60,6 +60,15 @@ class LinearizedModel(nn.Module):
             (tuple(dparams),),
         )
         return out + dp
+    
+    def dp(self, x) -> torch.Tensor:
+        dparams = [p - p0 for p, p0 in zip(self.params, self.params0)]
+        _, dp = jvp(
+            lambda param: self.func0(param, x),
+            (tuple(self.params0),),
+            (tuple(dparams),),
+        )
+        return dp
 
 
 class LinearizedImageEncoder(abc.ABC, nn.Module):
