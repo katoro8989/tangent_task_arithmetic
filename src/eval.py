@@ -50,7 +50,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
 def eval_dp_single_dataset(image_encoder, dataset_name, args):
     classification_head = get_classification_head(args, dataset_name)
-    model = ImageClassifier(image_encoder, classification_head)
+    model = image_encoder
 
     model.eval()
     torch.cuda.set_device(2)
