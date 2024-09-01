@@ -71,6 +71,8 @@ for task_a in eval_datasets:
             init_encoder=zs_encoder, image_encoder=ft_encoder, args=args
         )
 
+    accuracies[task_a] = {}
+
     for task_b in eval_datasets:
         for split in ["test", "val"]:
             # Evaluate
