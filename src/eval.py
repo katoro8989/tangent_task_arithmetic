@@ -76,7 +76,7 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
             norm_mean_total += norm_mean_batch.item()
             
     metrics = {"dp_norm_ave": norm_mean_total / len(dataset.test_dataset)}
-    print(f"Done evaluating on {dataset_name}. dp_norm_ave: {norm_mean_total / len(dataset)}")
+    print(f"Done evaluating on {dataset_name}. dp_norm_ave: {norm_mean_total / len(dataset.test_dataset)}")
 
     return metrics
 
