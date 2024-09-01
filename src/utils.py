@@ -71,7 +71,7 @@ def get_dps(inputs, classifier):
     assert callable(classifier)
     if hasattr(classifier, "to"):
         classifier = classifier.to(inputs.device)
-    return classifier.dp(inputs)
+    return classifier.model.dp(inputs)
 
 
 def get_probs(inputs, classifier):
