@@ -49,11 +49,10 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     return metrics
 
 def eval_dp_single_dataset(image_encoder, dataset_name, args):
-    classification_head = get_classification_head(args, dataset_name)
     model = image_encoder
 
     model.eval()
-    torch.cuda.set_device(2)
+    torch.cuda.set_device(0)
 
     dataset = get_dataset(
         dataset_name,
@@ -76,7 +75,7 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
             norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
             norm_mean_total += norm_mean_batch.item()
             
-    metrics = {"dp_norm_ave": norm_mean_total / len(dataset)}
+    metrics = {"dp_norm_ave": norm_mean_total / len(dataset.test_dataset)}
     print(f"Done evaluating on {dataset_name}. dp_norm_ave: {norm_mean_total / len(dataset)}")
 
     return metrics
