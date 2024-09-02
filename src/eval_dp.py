@@ -26,13 +26,13 @@ elif args.finetuning_mode == "posthoc":
 
 eval_datasets = [
     "Cars",
-    # "DTD",
-    # "EuroSAT",
-    # "GTSRB",
-    # "MNIST",
-    # "RESISC45",
-    # "SUN397",
-    # "SVHN",
+    "DTD",
+    "EuroSAT",
+    "GTSRB",
+    "MNIST",
+    "RESISC45",
+    "SUN397",
+    "SVHN",
 ]
 for task_a in eval_datasets:
     print("*" * 100)
@@ -86,13 +86,13 @@ for task_a in eval_datasets:
 
 # Save results
 if args.finetuning_mode == "none":
-    save_path = f"{args.save}/zeroshot_accuracies.json"
+    save_path = f"{args.save}/zeroshot_dp.json"
 elif args.finetuning_mode == "standard":
-    save_path = f"{args.save}/ft_accuracies.json"
+    save_path = f"{args.save}/ft_dp.json"
 elif args.finetuning_mode == "linear":
-    save_path = f"{args.save}/linear_ft_accuracies.json"
+    save_path = f"{args.save}/linear_ft_dp.json"
 elif args.finetuning_mode == "posthoc":
-    save_path = f"{args.save}/posthoc_ft_accuracies.json"
+    save_path = f"{args.save}/posthoc_ft_dp.json"
 
 with open(save_path, "w") as f:
     json.dump(accuracies, f)
