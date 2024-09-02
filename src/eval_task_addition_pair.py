@@ -39,12 +39,12 @@ with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
 eval_datasets = [
     "Cars",
     "DTD",
-    # "EuroSAT",
-    # "GTSRB",
-    # "MNIST",
-    # "RESISC45",
-    # "SVHN",
-    # "SUN397",
+    "EuroSAT",
+    "GTSRB",
+    "MNIST",
+    "RESISC45",
+    "SVHN",
+    "SUN397",
 ]
 
 all_combinations = list(itertools.combinations(eval_datasets, 2))
