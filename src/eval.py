@@ -52,7 +52,7 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
     model = image_encoder
 
     model.eval()
-    torch.cuda.set_device(2)
+    torch.cuda.set_device(3)
 
     dataset = get_dataset(
         dataset_name,
