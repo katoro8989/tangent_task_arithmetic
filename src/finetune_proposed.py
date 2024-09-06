@@ -20,7 +20,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}",
+                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth_to_{args.task_to_orth}",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
