@@ -49,9 +49,9 @@ def finetune(rank, args, group):
         if linearized_finetuning
         else os.path.join(args.save, train_dataset, f"zeroshot_orth_to_{args.task_to_orth}.pt")
     )
-    if os.path.exists(zs_path) and os.path.exists(ft_path):
-        print(f"Skipping fine-tuning because {ft_path} exists.")
-        return zs_path, ft_path
+    # if os.path.exists(zs_path) and os.path.exists(ft_path):
+    #     print(f"Skipping fine-tuning because {ft_path} exists.")
+    #     return zs_path, ft_path
 
     assert train_dataset is not None, "Please provide a training dataset."
 
