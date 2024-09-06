@@ -77,7 +77,7 @@ def finetune(rank, args, group):
     model = model.cuda()
 
     preprocess_fn = model.train_preprocess
-    print_every = 100
+    print_every = 10
 
     dataset = get_dataset(
         train_dataset,
