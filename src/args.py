@@ -53,6 +53,11 @@ def parse_arguments():
         default=1.,
     )
     parser.add_argument(
+        "--penalty_iter",
+        type=int,
+        default=-1,
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=64,

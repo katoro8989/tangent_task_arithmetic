@@ -153,21 +153,25 @@ def finetune(rank, args, group):
             logits = ddp_model(inputs)
             loss = loss_fn(logits, labels)
 
-            # ddp_loader_to_orth から1バッチを取得
-            try:
-                batch_to_orth = next(ddp_loader_to_orth_iter)
-            except StopIteration:
-                # イテレータが終わった場合は再度作成
-                ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
-                batch_to_orth = next(ddp_loader_to_orth_iter)
+            penalty = 0
+            if step > args.penalty_iter:
 
-            batch_to_orth = maybe_dictionarize(batch_to_orth)
-            inputs_to_orth = batch_to_orth["images"].cuda()
-            tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
-            dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
-            norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
-            penalty = args.penalty * norm_mean_batch
-            loss += penalty
+
+                # ddp_loader_to_orth から1バッチを取得
+                try:
+                    batch_to_orth = next(ddp_loader_to_orth_iter)
+                except StopIteration:
+                    # イテレータが終わった場合は再度作成
+                    ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
+                    batch_to_orth = next(ddp_loader_to_orth_iter)
+
+                batch_to_orth = maybe_dictionarize(batch_to_orth)
+                inputs_to_orth = batch_to_orth["images"].cuda()
+                tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
+                dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
+                norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
+                penalty = args.penalty * norm_mean_batch
+                loss += penalty
 
             loss.backward()
 
@@ -242,8 +246,8 @@ def finetune(rank, args, group):
 
 if __name__ == "__main__":
     train_datasets = [
-        "Cars",
-        # "DTD",
+        # "Cars",
+        "DTD",
         # "EuroSAT",
         # "GTSRB",
         # "MNIST",
