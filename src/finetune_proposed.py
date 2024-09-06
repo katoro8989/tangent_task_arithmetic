@@ -166,7 +166,8 @@ def finetune(rank, args, group):
             tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
             dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
             norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
-            loss += args.penalty * norm_mean_batch
+            penalty = args.penalty * norm_mean_batch
+            loss += penalty
 
             loss.backward()
 
@@ -213,6 +214,7 @@ def finetune(rank, args, group):
                     'step': step,
                     'train_loss': loss.item(),
                     'train_accuracy': accuracy, 
+                    'train_accuracy': penalty.item(), 
                 })
 
     # FIXME: Make this work with DDP.
