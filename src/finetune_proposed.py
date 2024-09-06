@@ -154,7 +154,9 @@ def finetune(rank, args, group):
 
             norm_mean_total = 0.
             for batch in ddp_loader_to_orth:
-                tau_jacob = ddp_model.module.image_encoder.model.dp(batch)
+                batch = maybe_dictionarize(batch)
+                inputs = batch["images"].cuda()
+                tau_jacob = ddp_model.module.image_encoder.model.dp(inputs)
                 dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
                 norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
                 norm_mean_total += norm_mean_batch.item()
