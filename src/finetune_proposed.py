@@ -214,7 +214,7 @@ def finetune(rank, args, group):
                     'step': step,
                     'train_loss': loss.item(),
                     'train_accuracy': accuracy, 
-                    'train_accuracy': penalty.item(), 
+                    'penalty': penalty.item(), 
                 })
 
     # FIXME: Make this work with DDP.
