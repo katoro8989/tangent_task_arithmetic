@@ -43,6 +43,16 @@ def parse_arguments():
         help="The type of model (e.g. RN50, ViT-B-32).",
     )
     parser.add_argument(
+        "--task_to_orth",
+        type=str,
+        default="DTD",
+    )
+    parser.add_argument(
+        "--penalty",
+        type=float,
+        default=1.,
+    )
+    parser.add_argument(
         "--batch-size",
         type=int,
         default=64,
