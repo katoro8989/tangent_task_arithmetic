@@ -136,6 +136,7 @@ def finetune(rank, args, group):
     for epoch in range(args.epochs):
         ddp_model.train()
 
+        ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
         for i, batch in enumerate(ddp_loader):
             start_time = time.time()
 
@@ -152,16 +153,20 @@ def finetune(rank, args, group):
             logits = ddp_model(inputs)
             loss = loss_fn(logits, labels)
 
-            norm_mean_total = 0.
-            for batch in ddp_loader_to_orth:
-                batch = maybe_dictionarize(batch)
-                inputs = batch["images"].cuda()
-                tau_jacob = ddp_model.module.image_encoder.model.dp(inputs)
-                dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
-                norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
-                norm_mean_total += norm_mean_batch.item()
-            norm_mean_total = norm_mean_total / len_dataset_to_orth
-            loss += args.penalty * norm_mean_total
+            # ddp_loader_to_orth から1バッチを取得
+            try:
+                batch_to_orth = next(ddp_loader_to_orth_iter)
+            except StopIteration:
+                # イテレータが終わった場合は再度作成
+                ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
+                batch_to_orth = next(ddp_loader_to_orth_iter)
+
+            batch_to_orth = maybe_dictionarize(batch_to_orth)
+            inputs_to_orth = batch_to_orth["images"].cuda()
+            tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
+            dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
+            norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
+            loss += args.penalty * norm_mean_batch
 
             loss.backward()
 
