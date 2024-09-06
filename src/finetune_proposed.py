@@ -42,12 +42,12 @@ def finetune(rank, args, group):
     ft_path = (
         os.path.join(args.save, train_dataset, f"linear_finetuned_orth_to_{args.task_to_orth}.pt")
         if linearized_finetuning
-        else os.path.join(args.save, train_dataset, f"finetuned_{args.task_to_orth}.pt")
+        else os.path.join(args.save, train_dataset, f"finetuned_orth_to_{args.task_to_orth}.pt")
     )
     zs_path = (
-        os.path.join(args.save, train_dataset, f"linear_zeroshot_{args.task_to_orth}.pt")
+        os.path.join(args.save, train_dataset, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
         if linearized_finetuning
-        else os.path.join(args.save, train_dataset, f"zeroshot_{args.task_to_orth}.pt")
+        else os.path.join(args.save, train_dataset, f"zeroshot_orth_to_{args.task_to_orth}.pt")
     )
     if os.path.exists(zs_path) and os.path.exists(ft_path):
         print(f"Skipping fine-tuning because {ft_path} exists.")
@@ -127,9 +127,9 @@ def finetune(rank, args, group):
     if args.save is not None and is_main_process():
         os.makedirs(ckpdir, exist_ok=True)
         model_path = (
-            os.path.join(ckpdir, "linear_zeroshot.pt")
+            os.path.join(ckpdir, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, "zeroshot.pt")
+            else os.path.join(ckpdir, f"zeroshot_orth_to_{args.task_to_orth}.pt")
         )
         ddp_model.module.image_encoder.save(model_path)
 
@@ -216,14 +216,14 @@ def finetune(rank, args, group):
 
     if args.save is not None and is_main_process():
         zs_path = (
-            os.path.join(ckpdir, f"linear_zeroshot_{args.task_to_orth}.pt")
+            os.path.join(ckpdir, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, f"zeroshot_{args.task_to_orth}.pt")
+            else os.path.join(ckpdir, f"zeroshot_orth_to_{args.task_to_orth}.pt")
         )
         ft_path = (
-            os.path.join(ckpdir, f"linear_finetuned_{args.task_to_orth}.pt")
+            os.path.join(ckpdir, f"linear_finetuned_orth_to_{args.task_to_orth}.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, f"finetuned_{args.task_to_orth}.pt")
+            else os.path.join(ckpdir, f"finetuned_orth_to_{args.task_to_orth}.pt")
         )
         image_encoder.save(ft_path)
         return zs_path, ft_path
