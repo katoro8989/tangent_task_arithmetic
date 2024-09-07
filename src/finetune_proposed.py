@@ -153,7 +153,7 @@ def finetune(rank, args, group):
             logits = ddp_model(inputs)
             loss = loss_fn(logits, labels)
 
-            penalty = 0
+            penalty = torch.tensor(0)
             if step > args.penalty_iter:
 
 
