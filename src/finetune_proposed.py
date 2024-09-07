@@ -246,8 +246,8 @@ def finetune(rank, args, group):
 
 if __name__ == "__main__":
     train_datasets = [
-        "Cars",
-        # "DTD",
+        # "Cars",
+        "DTD",
         # "EuroSAT",
         # "GTSRB",
         # "MNIST",
