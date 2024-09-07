@@ -27,12 +27,12 @@ elif args.finetuning_mode == "posthoc":
 for dataset in [
     "Cars",
     "DTD",
-    "EuroSAT",
-    "GTSRB",
-    "MNIST",
-    "RESISC45",
-    "SUN397",
-    "SVHN",
+    # "EuroSAT",
+    # "GTSRB",
+    # "MNIST",
+    # "RESISC45",
+    # "SUN397",
+    # "SVHN",
 ]:
     print("*" * 100)
     print(f"Evaluating on {dataset}")
@@ -43,10 +43,16 @@ for dataset in [
         else f"{args.save}/{dataset}Val/zeroshot.pt"
     )
 
+    # finetuned_checkpoint = (
+    #     f"{args.save}/{dataset}Val/linear_finetuned.pt"
+    #     if args.finetuning_mode == "linear"
+    #     else f"{args.save}/{dataset}Val/finetuned.pt"
+    # )
+
     finetuned_checkpoint = (
-        f"{args.save}/{dataset}Val/linear_finetuned.pt"
+        f"{args.save}/{dataset}Val/linear_finetuned_orth_to_{args.task_to_orth}.pt"
         if args.finetuning_mode == "linear"
-        else f"{args.save}/{dataset}Val/finetuned.pt"
+        else f"{args.save}/{dataset}Val/finetuned_orth_to_{args.task_to_orth}.pt"
     )
 
     try:
@@ -92,7 +98,7 @@ if args.finetuning_mode == "none":
 elif args.finetuning_mode == "standard":
     save_path = f"{args.save}/ft_accuracies.json"
 elif args.finetuning_mode == "linear":
-    save_path = f"{args.save}/linear_ft_accuracies.json"
+    save_path = f"{args.save}/linear_ft_accuracies_cars_dtd.json"
 elif args.finetuning_mode == "posthoc":
     save_path = f"{args.save}/posthoc_ft_accuracies.json"
 

@@ -39,12 +39,12 @@ with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
 eval_datasets = [
     "Cars",
     "DTD",
-    "EuroSAT",
-    "GTSRB",
-    "MNIST",
-    "RESISC45",
-    "SVHN",
-    "SUN397",
+    # "EuroSAT",
+    # "GTSRB",
+    # "MNIST",
+    # "RESISC45",
+    # "SVHN",
+    # "SUN397",
 ]
 
 all_combinations = list(itertools.combinations(eval_datasets, 2))
@@ -56,7 +56,8 @@ for pair_dataset in all_combinations:
     for dataset in pair_dataset:
         if args.finetuning_mode == "linear":
             pretrained_checkpoint = f"{args.save}/{dataset}Val/linear_zeroshot.pt"
-            finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned.pt"
+            # finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned.pt"
+            finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned_orth_to_{args.task_to_orth}.pt"
             task_vectors.append(
                 LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
             )
@@ -105,7 +106,7 @@ for pair_dataset in all_combinations:
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/additions_2pair.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/linear_additions_2pair.json"
+    save_file = f"{args.save}/linear_additions_cars_dtd.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/posthoc_additions_2pair.json"
 with open(save_file, "w") as f:
