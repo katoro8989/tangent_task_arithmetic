@@ -53,8 +53,11 @@ for pair_dataset in all_combinations:
 
     task_vectors = []
 
-    for dataset in pair_dataset:
+    for i, dataset in enumerate(pair_dataset):
         if args.finetuning_mode == "linear":
+            args.task_to_orth = pair_dataset[1 - i]
+            if args.task_to_orth == "Cars":
+                args.task_to_orth = args.task_to_orth + "Val"
             pretrained_checkpoint = f"{args.save}/{dataset}Val/linear_zeroshot.pt"
             # finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned.pt"
             finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned_orth_to_{args.task_to_orth}.pt"
