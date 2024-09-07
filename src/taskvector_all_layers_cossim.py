@@ -73,7 +73,7 @@ for pair_dataset in all_combinations:
     cossim_result = model_all_weights_similarity(task_vectors[0], task_vectors[1])
     print(f"{pair_dataset[0]}-{pair_dataset[1]}: {cossim_result}")
     
-    final_additive_accuracies[f"{pair_dataset[0]}-{pair_dataset[1]}"] = cossim_result
+    final_additive_accuracies[f"{pair_dataset[0]}-{pair_dataset[1]}"] = float(cossim_result)
 
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/cossim.json"
