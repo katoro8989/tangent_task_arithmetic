@@ -218,7 +218,7 @@ if __name__ == "__main__":
         # "DTD",
         # "EuroSAT",
         # "GTSRB",
-        "MNIST",
+        # "MNIST",
         "RESISC45",
         "SUN397",
         "SVHN",
