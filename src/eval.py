@@ -85,7 +85,7 @@ def eval_weight_disentanglement_single_dataset(
         image_encoder_alone, image_encoder_both, dataset_name, args
         ):
     
-    torch.cuda.set_device(3)
+    torch.cuda.set_device(2)
     args.batch_size = 128
 
     classification_head = get_classification_head(args, dataset_name)
