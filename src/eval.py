@@ -192,9 +192,9 @@ def evaluate_weight_disentanglement_at_coefs(
     task_vector1, task_vector2, pretrained_checkpoint, coef1, coef2, args
 ):
     eval_datasets = args.eval_datasets
-    task_vector_to_evaluate_1 = coef1 * task_vector1
-    task_vector_to_evaluate_2 = coef2 * task_vector2
-    task_vector_to_evaluate_both = coef1 * task_vector1 + coef2 * task_vector2
+    task_vector_to_evaluate_1 = task_vector1 * coef1
+    task_vector_to_evaluate_2 = task_vector2 * coef2
+    task_vector_to_evaluate_both = task_vector1 * coef1 + task_vector2 * coef2
 
     image_encoder_1 = task_vector_to_evaluate_1.apply_to(
         pretrained_checkpoint, scaling_coef=1.
