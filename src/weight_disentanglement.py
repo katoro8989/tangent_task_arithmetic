@@ -17,12 +17,12 @@ else:
 
 
 eval_datasets = [
-    "Cars",
-    # "DTD",
+    # "Cars",
+    "DTD",
     # "EuroSAT",
     # "GTSRB",
-    "MNIST",
-    # "RESISC45",
+    # "MNIST",
+    "RESISC45",
     # "SVHN",
     # "SUN397",
 ]
