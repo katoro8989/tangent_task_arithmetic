@@ -39,13 +39,13 @@ for dataset in [
 
     pretrained_checkpoint = (
         f"{args.save}/{dataset}Val/linear_zeroshot.pt"
-        if args.finetuning_mode == "linear"
+        if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
         else f"{args.save}/{dataset}Val/zeroshot.pt"
     )
 
     finetuned_checkpoint = (
         f"{args.save}/{dataset}Val/linear_finetuned.pt"
-        if args.finetuning_mode == "linear"
+        if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
         else f"{args.save}/{dataset}Val/finetuned.pt"
     )
 
