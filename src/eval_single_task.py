@@ -58,7 +58,7 @@ for dataset in [
     try:
         task_vector = (
             LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
-            if args.finetuning_mode == "linear"
+            if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
             else NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
         )
     except FileNotFoundError:
