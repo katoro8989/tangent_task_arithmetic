@@ -81,6 +81,50 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
 
     return metrics
 
+def eval_weight_disentanglement_single_dataset(
+        image_encoder_alone, image_encoder_both, dataset_name, args
+        ):
+    
+    torch.cuda.set_device(0)
+    args.batch_size = 16
+
+    classification_head = get_classification_head(args, dataset_name)
+    model_alone = ImageClassifier(image_encoder_alone, classification_head)
+    model_both = ImageClassifier(image_encoder_both, classification_head)
+
+    model_alone.eval()
+    model_both.eval()
+
+    dataset = get_dataset(
+        dataset_name,
+        model_alone.val_preprocess,
+        location=args.data_location,
+        batch_size=args.batch_size,
+    )
+    dataloader = get_dataloader(dataset, is_train=False, args=args, image_encoder=None)
+    device = args.device
+
+    with torch.no_grad():
+        top1, correct, n = 0.0, 0.0, 0.0
+        for _, data in enumerate(tqdm.tqdm(dataloader)):
+            data = maybe_dictionarize(data)
+            x = data["images"].to(device)
+            y = data["labels"]
+
+            logits_alone = utils.get_logits(x, model_alone)
+            logits_both = utils.get_logits(x, model_both)
+
+            pred_alone = logits_alone.argmax(dim=1, keepdim=True).to(device)
+            pred_both = logits_both.argmax(dim=1, keepdim=True).to(device)
+
+            correct += pred_alone.eq(pred_both).sum().item()
+
+            n += y.size(0)
+
+        disentanglement = correct / n
+
+    return disentanglement
+
 
 def evaluate(image_encoder, args):
     if args.eval_datasets is None:
@@ -141,6 +185,54 @@ def evaluate_task_vector(
             scaling_coef,
             posthoc_linearization,
         )
+
+    return info
+
+def evaluate_weight_disentanglement_at_coefs(
+    task_vector1, task_vector2, pretrained_checkpoint, coef1, coef2, args
+):
+    eval_datasets = args.eval_datasets
+    task_vector_to_evaluate_1 = coef1 * task_vector1
+    task_vector_to_evaluate_2 = coef2 * task_vector2
+    task_vector_to_evaluate_both = coef1 * task_vector1 + coef2 * task_vector2
+
+    image_encoder_1 = task_vector_to_evaluate_1.apply_to(
+        pretrained_checkpoint, scaling_coef=1.
+    )
+    image_encoder_2 = task_vector_to_evaluate_2.apply_to(
+        pretrained_checkpoint, scaling_coef=1.
+    )
+    image_encoder_both = task_vector_to_evaluate_both.apply_to(
+        pretrained_checkpoint, scaling_coef=1.
+    )
+
+    disentanglement_1 = eval_weight_disentanglement_single_dataset(
+        image_encoder_1, image_encoder_both, eval_datasets[0], args
+    )
+
+    disentanglement_2 = eval_weight_disentanglement_single_dataset(
+        image_encoder_2, image_encoder_both, eval_datasets[1], args
+    )
+
+    metric = {"disentanglement": (disentanglement_1 + disentanglement_2) / 2}
+    return metric
+
+
+def evaluate_weight_disentanglement(
+    task_vector1, task_vector2, pretrained_checkpoint, args, posthoc_linearization=False
+):
+    info = {}
+    for scaling_coef1 in np.linspace(-3., 3., args.n_eval_points):
+        for scaling_coef2 in np.linspace(-3., 3., args.n_eval_points):
+            print(f"Evaluating for scaling coefficient {scaling_coef1:.2f}-{scaling_coef2:.2f}")
+            info[scaling_coef1][scaling_coef2] = evaluate_weight_disentanglement_at_coefs(
+                task_vector1, 
+                task_vector2, 
+                pretrained_checkpoint,
+                scaling_coef1, 
+                scaling_coef2, 
+                args,
+            )
 
     return info
 
