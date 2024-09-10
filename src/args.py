@@ -137,7 +137,7 @@ def parse_arguments():
     parser.add_argument(
         "--n-eval-points",
         type=int,
-        default=1,
+        default=21,
         help="Number of evaluation points used to find optimal coefficient in task arithmetic.",
     )
     parsed_args = parser.parse_args()
