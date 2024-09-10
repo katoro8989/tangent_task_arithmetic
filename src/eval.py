@@ -16,7 +16,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
 
     model.eval()
     torch.cuda.set_device(0)
-    args.batch_size = 16
+    args.batch_size = 32
 
     dataset = get_dataset(
         dataset_name,
