@@ -25,13 +25,13 @@ elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
 
 eval_datasets = [
-    "Cars",
-    "DTD",
+    # "Cars",
+    # "DTD",
     "EuroSAT",
-    "GTSRB",
+    # "GTSRB",
     "MNIST",
-    "RESISC45",
-    "SUN397",
+    # "RESISC45",
+    # "SUN397",
     "SVHN",
 ]
 for task_a in eval_datasets:
