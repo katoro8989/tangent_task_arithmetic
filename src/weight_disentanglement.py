@@ -69,7 +69,7 @@ for pair_dataset in all_combinations:
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/weight_disentanglement_standard.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/weight_disentanglement_linear.json"
+    save_file = f"{args.save}/weight_disentanglement_linear_dtd_resisc.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/weight_disentanglement_posthoc.json"
 with open(save_file, "w") as f:
