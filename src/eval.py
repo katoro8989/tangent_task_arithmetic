@@ -15,7 +15,7 @@ def eval_single_dataset(image_encoder, dataset_name, args):
     model = ImageClassifier(image_encoder, classification_head)
 
     model.eval()
-    torch.cuda.set_device(1)
+    torch.cuda.set_device(0)
     args.batch_size = 32
 
     dataset = get_dataset(
@@ -53,7 +53,7 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
     model = image_encoder
 
     model.eval()
-    torch.cuda.set_device(3)
+    torch.cuda.set_device(0)
 
     dataset = get_dataset(
         dataset_name,
