@@ -223,6 +223,7 @@ def evaluate_weight_disentanglement(
 ):
     info = {}
     for scaling_coef1 in np.linspace(-3., 3., args.n_eval_points):
+        info[scaling_coef1] = {}
         for scaling_coef2 in np.linspace(-3., 3., args.n_eval_points):
             print(f"Evaluating for scaling coefficient {scaling_coef1:.2f}-{scaling_coef2:.2f}")
             info[scaling_coef1][scaling_coef2] = evaluate_weight_disentanglement_at_coefs(
