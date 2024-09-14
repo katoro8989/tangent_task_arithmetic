@@ -248,14 +248,14 @@ def finetune(rank, args, group):
 
 if __name__ == "__main__":
     train_datasets = [
-        "Cars",
+        # "Cars",
         "DTD",
-        "EuroSAT",
-        "GTSRB",
-        "MNIST",
-        "RESISC45",
-        "SUN397",
-        "SVHN",
+        # "EuroSAT",
+        # "GTSRB",
+        # "MNIST",
+        # "RESISC45",
+        # "SUN397",
+        # "SVHN",
     ]
     epochs = {
         "Cars": 35,
