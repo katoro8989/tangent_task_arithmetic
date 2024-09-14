@@ -250,8 +250,8 @@ if __name__ == "__main__":
     train_datasets = [
         # "Cars",
         # "DTD",
-        "EuroSAT",
-        # "GTSRB",
+        # "EuroSAT",
+        "GTSRB",
         # "MNIST",
         # "RESISC45",
         # "SUN397",
