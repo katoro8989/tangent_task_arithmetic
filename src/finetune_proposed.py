@@ -103,7 +103,7 @@ def finetune(rank, args, group):
 
     # Distribute the data and model across the GPUs.
     ddp_loader = distribute_loader(data_loader)
-    ddp_loaders_to_orth = [iter(distribute_loader(loader)) for loader in data_loaders_to_orth]
+    ddp_loaders_to_orth = [distribute_loader(loader) for loader in data_loaders_to_orth]
     ddp_model = torch.nn.parallel.DistributedDataParallel(
         model,
         device_ids=[rank],
@@ -136,6 +136,8 @@ def finetune(rank, args, group):
         )
         ddp_model.module.image_encoder.save(model_path)
 
+    ddp_loader_iters_to_orth = [iter(loader) for loader in ddp_loaders_to_orth]
+
     for epoch in range(args.epochs):
         ddp_model.train()
 
@@ -157,13 +159,13 @@ def finetune(rank, args, group):
 
             penalty = torch.tensor(0)
             if step > args.penalty_iter:
-                ddp_loader_to_orth = ddp_loaders_to_orth[step % len_orth_datasets]
+                ddp_loader_to_orth = ddp_loader_iters_to_orth[step % len_orth_datasets]
                 try:
                     batch_to_orth = next(ddp_loader_to_orth)
                 except StopIteration:
-                    ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
-                    ddp_loaders_to_orth[step % len_orth_datasets] = ddp_loader_to_orth_iter
-                    batch_to_orth = next(ddp_loader_to_orth_iter)
+                    ddp_loader_iters_to_orth[step % len_orth_datasets] = iter(ddp_loaders_to_orth[step % len_orth_datasets])
+                    ddp_loader_to_orth = ddp_loader_iters_to_orth[step % len_orth_datasets]
+                    batch_to_orth = next(ddp_loader_to_orth)
 
                 batch_to_orth = maybe_dictionarize(batch_to_orth)
                 inputs_to_orth = batch_to_orth["images"].cuda()
