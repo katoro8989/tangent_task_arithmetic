@@ -26,13 +26,13 @@ elif args.finetuning_mode == "posthoc":
 
 eval_datasets = [
     "Cars",
-    # "DTD",
+    "DTD",
     "EuroSAT",
-    # "GTSRB",
-    # "MNIST",
-    # "RESISC45",
-    # "SUN397",
-    # "SVHN",
+    "GTSRB",
+    "MNIST",
+    "RESISC45",
+    "SUN397",
+    "SVHN",
 ]
 for task_a in eval_datasets:
     print("*" * 100)
