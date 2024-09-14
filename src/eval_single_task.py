@@ -26,13 +26,13 @@ elif args.finetuning_mode == "posthoc":
 
 for dataset in [
     "Cars",
-    # "DTD",
+    "DTD",
     "EuroSAT",
-    # "GTSRB",
-    # "MNIST",
-    # "RESISC45",
-    # "SUN397",
-    # "SVHN",
+    "GTSRB",
+    "MNIST",
+    "RESISC45",
+    "SUN397",
+    "SVHN",
 ]:
     print("*" * 100)
     print(f"Evaluating on {dataset}")
