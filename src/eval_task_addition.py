@@ -10,9 +10,9 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 args = parse_arguments()
 
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 
 print("*" * 100)
@@ -37,13 +37,13 @@ with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
 
 eval_datasets = [
     "Cars",
-    "DTD",
+    # "DTD",
     "EuroSAT",
-    "GTSRB",
-    "MNIST",
-    "RESISC45",
-    "SVHN",
-    "SUN397",
+    # "GTSRB",
+    # "MNIST",
+    # "RESISC45",
+    # "SVHN",
+    # "SUN397",
 ]
 
 task_vectors = []
