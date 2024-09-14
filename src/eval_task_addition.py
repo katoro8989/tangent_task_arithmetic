@@ -37,13 +37,13 @@ with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
 
 eval_datasets = [
     "Cars",
-    # "DTD",
+    "DTD",
     "EuroSAT",
-    # "GTSRB",
-    # "MNIST",
-    # "RESISC45",
-    # "SVHN",
-    # "SUN397",
+    "GTSRB",
+    "MNIST",
+    "RESISC45",
+    "SVHN",
+    "SUN397",
 ]
 
 task_vectors = []
