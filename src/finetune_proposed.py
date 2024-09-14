@@ -286,7 +286,7 @@ if __name__ == "__main__":
         if args.seed is not None:
             args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints_ours_/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
