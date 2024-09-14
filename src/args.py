@@ -50,7 +50,7 @@ def parse_arguments():
     parser.add_argument(
         "--penalty",
         type=float,
-        default=1.,
+        default=.1,
     )
     parser.add_argument(
         "--penalty_iter",
@@ -58,7 +58,12 @@ def parse_arguments():
         default=-1,
     )
     parser.add_argument(
-        "--batch-size",
+        "--batch_size",
+        type=int,
+        default=64,
+    )
+    parser.add_argument(
+        "--orth_batch_size",
         type=int,
         default=64,
     )

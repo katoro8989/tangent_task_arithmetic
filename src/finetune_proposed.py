@@ -40,18 +40,18 @@ def finetune(rank, args, group):
 
     # Check if checkpoints already exist
     ft_path = (
-        os.path.join(args.save, train_dataset, f"linear_finetuned_orth_to_{args.task_to_orth}.pt")
+        os.path.join(args.save, train_dataset, f"linear_finetuned.pt")
         if linearized_finetuning
-        else os.path.join(args.save, train_dataset, f"finetuned_orth_to_{args.task_to_orth}.pt")
+        else os.path.join(args.save, train_dataset, f"finetuned.pt")
     )
     zs_path = (
-        os.path.join(args.save, train_dataset, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
+        os.path.join(args.save, train_dataset, f"linear_zeroshot.pt")
         if linearized_finetuning
-        else os.path.join(args.save, train_dataset, f"zeroshot_orth_to_{args.task_to_orth}.pt")
+        else os.path.join(args.save, train_dataset, f"zeroshot.pt")
     )
-    # if os.path.exists(zs_path) and os.path.exists(ft_path):
-    #     print(f"Skipping fine-tuning because {ft_path} exists.")
-    #     return zs_path, ft_path
+    if os.path.exists(zs_path) and os.path.exists(ft_path):
+        print(f"Skipping fine-tuning because {ft_path} exists.")
+        return zs_path, ft_path
 
     assert train_dataset is not None, "Please provide a training dataset."
 
@@ -87,20 +87,23 @@ def finetune(rank, args, group):
     )
     data_loader = get_dataloader(dataset, is_train=True, args=args, image_encoder=None)
 
-    dataset_to_orth = get_dataset(
-        args.task_to_orth,
-        preprocess_fn,
-        location=args.data_location,
-        batch_size=args.batch_size,
-    )
-    len_dataset_to_orth = len(dataset_to_orth.train_dataset)
-    data_loader_to_orth = get_dataloader(dataset_to_orth, is_train=True, args=args, image_encoder=None)
+    data_loaders_to_orth = []
+    for d in args.train_datasets_to_orth:
+        dataset_to_orth = get_dataset(
+            d,
+            preprocess_fn,
+            location=args.data_location,
+            batch_size=args.orth_batch_size,
+        )
+        data_loaders_to_orth.append(get_dataloader(dataset_to_orth, is_train=True, args=args, image_encoder=None))
+
+    len_orth_datasets = len(args.train_datasets_to_orth)
 
     num_batches = len(dataset.train_loader)
 
     # Distribute the data and model across the GPUs.
     ddp_loader = distribute_loader(data_loader)
-    ddp_loader_to_orth = distribute_loader(data_loader_to_orth)
+    ddp_loaders_to_orth = [iter(distribute_loader(loader)) for loader in data_loaders_to_orth]
     ddp_model = torch.nn.parallel.DistributedDataParallel(
         model,
         device_ids=[rank],
@@ -127,16 +130,15 @@ def finetune(rank, args, group):
     if args.save is not None and is_main_process():
         os.makedirs(ckpdir, exist_ok=True)
         model_path = (
-            os.path.join(ckpdir, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
+            os.path.join(ckpdir, f"linear_zeroshot.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, f"zeroshot_orth_to_{args.task_to_orth}.pt")
+            else os.path.join(ckpdir, f"zeroshot.pt")
         )
         ddp_model.module.image_encoder.save(model_path)
 
     for epoch in range(args.epochs):
         ddp_model.train()
 
-        ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
         for i, batch in enumerate(ddp_loader):
             start_time = time.time()
 
@@ -155,25 +157,21 @@ def finetune(rank, args, group):
 
             penalty = torch.tensor(0)
             if step > args.penalty_iter:
-
-
-                # ddp_loader_to_orth から1バッチを取得
+                ddp_loader_to_orth = ddp_loaders_to_orth[step % len_orth_datasets]
                 try:
                     batch_to_orth = next(ddp_loader_to_orth_iter)
                 except StopIteration:
-                    # イテレータが終わった場合は再度作成
                     ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
                     batch_to_orth = next(ddp_loader_to_orth_iter)
 
                 batch_to_orth = maybe_dictionarize(batch_to_orth)
                 inputs_to_orth = batch_to_orth["images"].cuda()
                 tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
-                dp_norms = torch.norm(tau_jacob, dim=1)  # 各 dp の L2 ノルム (2-ノルム) を計算
-                norm_mean_batch = dp_norms.sum()  # ノルムの和を計算
-                penalty = args.penalty * norm_mean_batch
-                loss += penalty
-
-            loss.backward()
+                dp_norms = torch.norm(tau_jacob, dim=1)
+                penalty = dp_norms.mean()
+                
+            total_loss = loss + args.penalty * penalty
+            total_loss.backward()
 
             if (i + 1) % args.num_grad_accumulation == 0:
                 scheduler(step)
@@ -216,9 +214,10 @@ def finetune(rank, args, group):
                 )
                 run.log({
                     'step': step,
-                    'train_loss': loss.item(),
+                    'total_loss': total_loss.item(),
                     'train_accuracy': accuracy, 
                     'penalty': penalty.item(), 
+                    'loss': loss.item(), 
                 })
 
     # FIXME: Make this work with DDP.
@@ -229,14 +228,14 @@ def finetune(rank, args, group):
 
     if args.save is not None and is_main_process():
         zs_path = (
-            os.path.join(ckpdir, f"linear_zeroshot_orth_to_{args.task_to_orth}.pt")
+            os.path.join(ckpdir, f"linear_zeroshot.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, f"zeroshot_orth_to_{args.task_to_orth}.pt")
+            else os.path.join(ckpdir, f"zeroshot.pt")
         )
         ft_path = (
-            os.path.join(ckpdir, f"linear_finetuned_orth_to_{args.task_to_orth}.pt")
+            os.path.join(ckpdir, f"linear_finetuned.pt")
             if linearized_finetuning
-            else os.path.join(ckpdir, f"finetuned_orth_to_{args.task_to_orth}.pt")
+            else os.path.join(ckpdir, f"finetuned.pt")
         )
         image_encoder.save(ft_path)
         return zs_path, ft_path
@@ -246,14 +245,14 @@ def finetune(rank, args, group):
 
 if __name__ == "__main__":
     train_datasets = [
-        # "Cars",
+        "Cars",
         "DTD",
-        # "EuroSAT",
-        # "GTSRB",
-        # "MNIST",
-        # "RESISC45",
-        # "SUN397",
-        # "SVHN",
+        "EuroSAT",
+        "GTSRB",
+        "MNIST",
+        "RESISC45",
+        "SUN397",
+        "SVHN",
     ]
     epochs = {
         "Cars": 35,
@@ -272,15 +271,19 @@ if __name__ == "__main__":
         args.lr = 1e-5
         args.epochs = epochs[dataset]
         args.train_dataset = dataset + "Val"
+        args.train_datasets_to_orth = [d + "Val" for d in train_datasets if d != dataset]
+        args.train_datasets_to_orth.append("ImageNetVal")
+        
 
         # We use gradient accumulation to simulate larger batch sizes if the model does not fit in memory.
         args.batch_size = 32 if args.model == "ViT-L-14" else 128
+        args.orth_batch_size = 4 if args.model == "ViT-L-14" else 16
         args.num_grad_accumulation = 4 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
