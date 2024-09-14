@@ -7,9 +7,9 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 
 args = parse_arguments()
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 accuracies = {}
 
@@ -25,14 +25,14 @@ elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
 
 eval_datasets = [
-    # "Cars",
+    "Cars",
     # "DTD",
     "EuroSAT",
     # "GTSRB",
-    "MNIST",
+    # "MNIST",
     # "RESISC45",
     # "SUN397",
-    "SVHN",
+    # "SVHN",
 ]
 for task_a in eval_datasets:
     print("*" * 100)
