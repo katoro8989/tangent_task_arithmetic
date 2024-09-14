@@ -27,7 +27,7 @@ elif args.finetuning_mode == "posthoc":
 for dataset in [
     "Cars",
     # "DTD",
-    # "EuroSAT",
+    "EuroSAT",
     # "GTSRB",
     # "MNIST",
     # "RESISC45",
