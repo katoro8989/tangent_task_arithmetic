@@ -20,7 +20,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth_to_{args.task_to_orth}",
+                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -159,9 +159,10 @@ def finetune(rank, args, group):
             if step > args.penalty_iter:
                 ddp_loader_to_orth = ddp_loaders_to_orth[step % len_orth_datasets]
                 try:
-                    batch_to_orth = next(ddp_loader_to_orth_iter)
+                    batch_to_orth = next(ddp_loader_to_orth)
                 except StopIteration:
                     ddp_loader_to_orth_iter = iter(ddp_loader_to_orth)
+                    ddp_loaders_to_orth[step % len_orth_datasets] = ddp_loader_to_orth_iter
                     batch_to_orth = next(ddp_loader_to_orth_iter)
 
                 batch_to_orth = maybe_dictionarize(batch_to_orth)
@@ -169,7 +170,7 @@ def finetune(rank, args, group):
                 tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()
-                
+
             total_loss = loss + args.penalty * penalty
             total_loss.backward()
 
