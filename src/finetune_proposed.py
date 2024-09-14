@@ -251,9 +251,9 @@ if __name__ == "__main__":
         # "Cars",
         # "DTD",
         # "EuroSAT",
-        "GTSRB",
-        # "MNIST",
-        # "RESISC45",
+        # "GTSRB",
+        "MNIST",
+        "RESISC45",
         # "SUN397",
         # "SVHN",
     ]
