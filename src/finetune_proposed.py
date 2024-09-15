@@ -254,8 +254,8 @@ if __name__ == "__main__":
         "GTSRB",
         "MNIST",
         "RESISC45",
-        # "SUN397",
-        # "SVHN",
+        "SUN397",
+        "SVHN",
     ]
     epochs = {
         "Cars": 35,
