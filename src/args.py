@@ -135,6 +135,12 @@ def parse_arguments():
         help="Random seed.",
     )
     parser.add_argument(
+        "--device_number",
+        type=int,
+        default=0,
+        help="device_number",
+    )
+    parser.add_argument(
         "--finetuning-mode",
         choices=["standard", "linear", "posthoc", "none"],
         help="Whether to use linearized models or not.",
