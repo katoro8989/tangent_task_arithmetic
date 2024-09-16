@@ -53,7 +53,8 @@ def eval_dp_single_dataset(image_encoder, dataset_name, args):
     model = image_encoder
 
     model.eval()
-    torch.cuda.set_device(0)
+    torch.cuda.set_device(args.device_number)
+    args.batch_size = 32
 
     dataset = get_dataset(
         dataset_name,
