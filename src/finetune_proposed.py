@@ -224,10 +224,10 @@ def finetune(rank, args, group):
                 })
 
     # FIXME: Make this work with DDP.
-    if is_main_process():
-        # We only need to evaluate the model on the first GPU.
-        image_encoder = ddp_model.module.image_encoder
-        eval_single_dataset(image_encoder, train_dataset, args)
+    # if is_main_process():
+    #     # We only need to evaluate the model on the first GPU.
+    #     image_encoder = ddp_model.module.image_encoder
+    #     eval_single_dataset(image_encoder, train_dataset, args)
 
     if args.save is not None and is_main_process():
         zs_path = (
