@@ -11,9 +11,9 @@ args = parse_arguments()
 
 
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
     pretrained_accuracies = json.load(f)
@@ -74,8 +74,7 @@ for dataset in eval_datasets:
         metric=f"{dataset}Val:top1",
         minimize=True,
         control_metric=f"{control_dataset}Val:top1",
-        control_metric_threshold=args.control_threshold
-        * pretrained_accuracies[control_dataset + "Val"],
+        control_metric_threshold=0.95 * pretrained_accuracies[control_dataset + "Val"],
     )
 
     # Evaluate on the test set with the optimal coefficient.
