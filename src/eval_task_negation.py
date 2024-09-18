@@ -100,7 +100,7 @@ for dataset in eval_datasets:
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/negations.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/linear_negations_1.0^.json"
+    save_file = f"{args.save}/linear_negations^1.0.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/posthoc_negations.json"
 

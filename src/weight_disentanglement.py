@@ -11,17 +11,17 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 args = parse_arguments()
 
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 
 eval_datasets = [
-    # "Cars",
-    "DTD",
+    "Cars",
+    # "DTD",
     # "EuroSAT",
-    "GTSRB",
-    # "MNIST",
+    # "GTSRB",
+    "MNIST",
     # "RESISC45",
     # "SVHN",
     # "SUN397",
@@ -35,12 +35,8 @@ for pair_dataset in all_combinations:
 
     for i, dataset in enumerate(pair_dataset):
         if args.finetuning_mode == "linear":
-            args.task_to_orth = pair_dataset[1 - i]
-            if args.task_to_orth == "Cars":
-                args.task_to_orth = args.task_to_orth + "Val"
             pretrained_checkpoint = f"{args.save}/{dataset}Val/linear_zeroshot.pt"
             finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned.pt"
-            # finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned_orth_to_{args.task_to_orth}.pt"
             task_vectors.append(
                 LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
             )
@@ -69,7 +65,7 @@ for pair_dataset in all_combinations:
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/weight_disentanglement_standard.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/weight_disentanglement_linear_dtd_gtsrb.json"
+    save_file = f"{args.save}/weight_disentanglement_linear_cars_mnist.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/weight_disentanglement_posthoc.json"
 with open(save_file, "w") as f:
