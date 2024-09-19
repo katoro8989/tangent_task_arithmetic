@@ -35,6 +35,9 @@ class MultiHeadImageClassifier(torch.nn.Module):
         outputs = self.classification_heads[head_idx](features)
         return outputs
 
+    def __call__(self, inputs, head_idx):
+        return self.forward(inputs, head_idx)
+
     def save(self, filename):
         print(f"Saving image classifier to {filename}")
         utils.torch_save(self, filename)
