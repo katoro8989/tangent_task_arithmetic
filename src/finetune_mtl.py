@@ -171,7 +171,7 @@ def finetune(rank, args, group):
     ddp_loader_iters = [iter(loader) for loader in ddp_loaders]
 
     count_step = 0  # ステップカウンタを初期化
-    max_steps = 1  # 最大ステップ数を設定
+    max_steps = 2000  # 最大ステップ数を設定
 
     for epoch in range(args.epochs):
         if count_step >= max_steps:
