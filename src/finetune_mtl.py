@@ -284,7 +284,7 @@ def finetune(rank, args, group):
         if step >= max_steps:
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
-        
+
     if args.save is not None and is_main_process():
         zs_path = (
             os.path.join(ckpdir, f"linear_zeroshot.pt")
@@ -322,8 +322,8 @@ if __name__ == "__main__":
     args.train_datasets = [d + "Val" for d in train_datasets]
 
     # 勾配の累積を使用して大きなバッチサイズをシミュレート
-    args.batch_size = 16 if args.model == "ViT-L-14" else 64
-    args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 2
+    args.batch_size = 16 if args.model == "ViT-L-14" else 32
+    args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 4
 
     if args.seed is not None:
         args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
