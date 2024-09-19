@@ -12,9 +12,9 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 args = parse_arguments()
 
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 
 eval_datasets = [
@@ -36,9 +36,6 @@ for pair_dataset in all_combinations:
 
     for i, dataset in enumerate(pair_dataset):
         if args.finetuning_mode == "linear":
-            args.task_to_orth = pair_dataset[1 - i]
-            if args.task_to_orth == "Cars":
-                args.task_to_orth = args.task_to_orth + "Val"
             pretrained_checkpoint = f"{args.save}/{dataset}Val/linear_zeroshot.pt"
             finetuned_checkpoint = f"{args.save}/{dataset}Val/linear_finetuned.pt"
             task_vectors.append(
