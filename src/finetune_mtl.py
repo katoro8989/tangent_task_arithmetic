@@ -174,13 +174,13 @@ def finetune(rank, args, group):
     max_steps = 2000  # 最大ステップ数を設定
 
     for epoch in range(args.epochs):
-        if count_step >= max_steps:
+        if step >= max_steps:
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
         ddp_model.train()
 
         for i in range(num_steps_per_epoch):
-            if count_step >= max_steps:
+            if step >= max_steps:
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     # 勾配の累積を使用して大きなバッチサイズをシミュレート
     args.batch_size = 16 if args.model == "ViT-L-14" else 64
-    args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
+    args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 2
 
     if args.seed is not None:
         args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
