@@ -171,7 +171,7 @@ def finetune(rank, args, group):
     ddp_loader_iters = [iter(loader) for loader in ddp_loaders]
 
     count_step = 0  # ステップカウンタを初期化
-    max_steps = 2000  # 最大ステップ数を設定
+    max_steps = 4000  # 最大ステップ数を設定
 
     for epoch in range(args.epochs):
         if count_step >= max_steps:
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     args.train_datasets = [d + "Val" for d in train_datasets]
 
     # 勾配の累積を使用して大きなバッチサイズをシミュレート
-    args.batch_size = 16 if args.model == "ViT-L-14" else 32
+    args.batch_size = 16 if args.model == "ViT-L-14" else 64
     args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
     if args.seed is not None:
