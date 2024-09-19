@@ -78,9 +78,9 @@ def finetune(rank, args, group):
         if linearized_finetuning
         else os.path.join(ckpdir, f"zeroshot.pt")
     )
-    if os.path.exists(zs_path) and os.path.exists(ft_path):
-        print(f"Skipping fine-tuning because {ft_path} exists.")
-        return zs_path, ft_path
+    # if os.path.exists(zs_path) and os.path.exists(ft_path):
+    #     print(f"Skipping fine-tuning because {ft_path} exists.")
+    #     return zs_path, ft_path
 
     if args.load is not None and args.load.endswith("pt"):
         image_encoder = (
