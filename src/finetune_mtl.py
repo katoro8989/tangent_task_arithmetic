@@ -170,22 +170,19 @@ def finetune(rank, args, group):
     # 各データローダーのイテレータを作成
     ddp_loader_iters = [iter(loader) for loader in ddp_loaders]
 
-    count_step = 0  # ステップカウンタを初期化
+    step = 0  # optimizer.step() を呼び出した回数をカウントする変数を初期化
     max_steps = 2000  # 最大ステップ数を設定
 
     for epoch in range(args.epochs):
-        if step >= max_steps:
-            print(f"Reached maximum steps of {max_steps}. Ending training.")
-            break  # 外側のループを終了
         ddp_model.train()
 
         for i in range(num_steps_per_epoch):
+            # optimizer.step() が最大ステップ数に達しているか確認
             if step >= max_steps:
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
             start_time = time.time()
-            step = count_step // args.num_grad_accumulation
 
             # inputs_per_task と labels_per_task を収集
             inputs_per_task = []
@@ -230,53 +227,64 @@ def finetune(rank, args, group):
             # backward を一度だけ呼び出す
             total_loss.backward()
 
-            if (count_step + 1) % args.num_grad_accumulation == 0:
+            # 勾配の累積と optimizer.step() のタイミングを確認
+            if (i + 1) % args.num_grad_accumulation == 0:
+                # optimizer を更新
                 scheduler(step)
                 torch.nn.utils.clip_grad_norm_(params, 1.0)
                 optimizer.step()
+                optimizer.zero_grad()
+
+                # optimizer.step() を呼び出した後にステップをインクリメント
+                step += 1
+
+                # ロギングとチェックポイントの保存
+                if step % print_every == 0 and is_main_process():
+                    percent_complete = 100 * step / max_steps
+
+                    avg_accuracy = sum(accuracies) / len(accuracies)
+
+                    print(
+                        f"Train Epoch: {epoch} [{percent_complete:.0f}%]\t"
+                        f"Loss: {total_loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}\t"
+                        f"Avg Acc: {avg_accuracy:.4f}",
+                        flush=True,
+                    )
+                    # 各タスクの精度をログ
+                    log_dict = {
+                        'step': step,
+                        'total_loss': total_loss.item(),
+                        'avg_accuracy': avg_accuracy,
+                    }
+                    for idx, dataset in enumerate(train_datasets):
+                        log_dict[f'acc_{dataset}'] = accuracies[idx]
+                    run.log(log_dict)
+
+                if (
+                    args.checkpoint_every > 0
+                    and step % args.checkpoint_every == 0
+                    and is_main_process()
+                ):
+                    print("Saving checkpoint.")
+                    model_path = (
+                        os.path.join(ckpdir, f"linear_checkpoint_{step}.pt")
+                        if linearized_finetuning
+                        else os.path.join(ckpdir, f"checkpoint_{step}.pt")
+                    )
+                    ddp_model.module.save(model_path)
+
+                # optimizer.step() を行った後に最大ステップ数に達しているか確認
+                if step >= max_steps:
+                    print(f"Reached maximum steps of {max_steps}. Ending training.")
+                    break  # 内側のループを終了
 
             batch_time = time.time() - start_time
 
-            if (
-                args.checkpoint_every > 0
-                and step % args.checkpoint_every == 0
-                and is_main_process()
-            ):
-                print("Saving checkpoint.")
-                model_path = (
-                    os.path.join(ckpdir, f"linear_checkpoint_{step}.pt")
-                    if linearized_finetuning
-                    else os.path.join(ckpdir, f"checkpoint_{step}.pt")
-                )
-                ddp_model.module.save(model_path)
-
-            if (
-                step % print_every == 0
-                and ((count_step + 1) % args.num_grad_accumulation == 0)
-                and is_main_process()
-            ):
-                percent_complete = 100 * i / num_steps_per_epoch
-
-                avg_accuracy = sum(accuracies) / len(accuracies)
-
-                print(
-                    f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{num_steps_per_epoch}]\t"
-                    f"Loss: {total_loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}\t"
-                    f"Avg Acc: {avg_accuracy:.4f}",
-                    flush=True,
-                )
-                # 各タスクの精度をログ
-                log_dict = {
-                    'step': step,
-                    'total_loss': total_loss.item(),
-                    'avg_accuracy': avg_accuracy,
-                }
-                for idx, dataset in enumerate(train_datasets):
-                    log_dict[f'acc_{dataset}'] = accuracies[idx]
-                run.log(log_dict)
-
-            count_step += 1  # ステップカウンタをインクリメント
-
+        # 外側のループで最大ステップ数に達しているか確認
+        if step >= max_steps:
+            print(f"Reached maximum steps of {max_steps}. Ending training.")
+            break  # 外側のループを終了
+        
     if args.save is not None and is_main_process():
         zs_path = (
             os.path.join(ckpdir, f"linear_zeroshot.pt")
