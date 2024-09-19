@@ -171,7 +171,7 @@ def finetune(rank, args, group):
     ddp_loader_iters = [iter(loader) for loader in ddp_loaders]
 
     count_step = 0  # ステップカウンタを初期化
-    max_steps = 4000  # 最大ステップ数を設定
+    max_steps = 1  # 最大ステップ数を設定
 
     for epoch in range(args.epochs):
         if count_step >= max_steps:
@@ -288,10 +288,11 @@ def finetune(rank, args, group):
             if linearized_finetuning
             else os.path.join(ckpdir, f"finetuned.pt")
         )
-        ddp_model.module.save(ft_path)
+        image_encoder.save(ft_path)
         return zs_path, ft_path
 
     cleanup_ddp()
+
 
 
 if __name__ == "__main__":
