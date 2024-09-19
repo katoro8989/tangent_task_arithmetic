@@ -12,40 +12,8 @@ from src.datasets.registry import get_dataset
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.heads import get_classification_head
 from src.linearize import LinearizedImageEncoder
-from src.modeling import ImageEncoder
+from src.modeling import ImageEncoder, MultiHeadImageClassifier
 from src.utils import LabelSmoothing, cosine_lr
-
-
-class MultiHeadImageClassifier(torch.nn.Module):
-    def __init__(self, image_encoder, classification_heads):
-        super().__init__()
-        self.image_encoder = image_encoder
-        self.classification_heads = torch.nn.ModuleList(classification_heads)
-        if self.image_encoder is not None:
-            self.train_preprocess = self.image_encoder.train_preprocess
-            self.val_preprocess = self.image_encoder.val_preprocess
-
-    def freeze_head(self):
-        for idx in range(len(self.classification_heads)):
-            self.classification_heads[idx].weight.requires_grad_(False)
-            self.classification_heads[idx].bias.requires_grad_(False)
-
-    def forward(self, inputs, head_idx):
-        features = self.image_encoder(inputs)
-        outputs = self.classification_heads[head_idx](features)
-        return outputs
-
-    def __call__(self, inputs, head_idx):
-        return self.forward(inputs, head_idx)
-
-    def save(self, filename):
-        print(f"Saving image classifier to {filename}")
-        utils.torch_save(self, filename)
-
-    @classmethod
-    def load(cls, filename):
-        print(f"Loading image classifier from {filename}")
-        return utils.torch_load(filename)
 
 
 def finetune(rank, args, group):
@@ -169,7 +137,7 @@ def finetune(rank, args, group):
             if linearized_finetuning
             else os.path.join(ckpdir, f"zeroshot.pt")
         )
-        ddp_model.module.save(model_path)
+        ddp_model.module.image_encoder.save(model_path)
 
     # 各データローダーのイテレータを作成
     ddp_loader_iters = [iter(loader) for loader in ddp_loaders]
