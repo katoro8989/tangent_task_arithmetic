@@ -12,9 +12,37 @@ from src.datasets.registry import get_dataset
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.heads import get_classification_head
 from src.linearize import LinearizedImageEncoder
-from src.modeling import ImageEncoder, MultiHeadImageClassifier
+from src.modeling import ImageEncoder
 from src.utils import LabelSmoothing, cosine_lr
 
+class MultiHeadImageClassifier(torch.nn.Module):
+    def __init__(self, image_encoder, classification_heads):
+        super().__init__()
+        self.image_encoder = image_encoder
+        self.classification_heads = torch.nn.ModuleList(classification_heads)
+        if self.image_encoder is not None:
+            self.train_preprocess = self.image_encoder.train_preprocess
+            self.val_preprocess = self.image_encoder.val_preprocess
+
+    def forward(self, inputs_per_task):
+        # 入力を連結
+        all_inputs = torch.cat(inputs_per_task, dim=0)
+        # 一度だけ image_encoder を呼び出す
+        all_features = self.image_encoder(all_inputs)
+        # 特徴量をタスクごとに分割
+        features_per_task = []
+        start_idx = 0
+        for inputs in inputs_per_task:
+            end_idx = start_idx + inputs.size(0)
+            features = all_features[start_idx:end_idx]
+            features_per_task.append(features)
+            start_idx = end_idx
+        # 各分類ヘッドに特徴量を渡す
+        outputs = []
+        for idx, features in enumerate(features_per_task):
+            logits = self.classification_heads[idx](features)
+            outputs.append(logits)
+        return outputs
 
 def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
@@ -159,6 +187,7 @@ def finetune(rank, args, group):
             start_time = time.time()
             step = count_step // args.num_grad_accumulation
 
+            # inputs_per_task と labels_per_task を収集
             inputs_per_task = []
             labels_per_task = []
             data_time = 0.0
@@ -181,15 +210,12 @@ def finetune(rank, args, group):
                 inputs_per_task.append(inputs)
                 labels_per_task.append(labels)
 
+            # モデルの forward を一度だけ呼び出す
+            outputs = ddp_model(inputs_per_task)
             total_loss = 0.0
             accuracies = []
 
-            # 勾配を初期化
-            optimizer.zero_grad()
-
-            # 各タスクの損失を計算
-            for idx, (inputs, labels) in enumerate(zip(inputs_per_task, labels_per_task)):
-                logits = ddp_model(inputs, head_idx=idx)
+            for logits, labels in zip(outputs, labels_per_task):
                 loss = loss_fn(logits, labels)
                 total_loss += loss
 
@@ -198,10 +224,10 @@ def finetune(rank, args, group):
                 accuracy = correct / labels.size(0)
                 accuracies.append(accuracy)
 
-            # 総損失をタスク数で正規化（平均）
+            # 損失を正規化
             total_loss = total_loss / len(train_datasets)
 
-            # 一度だけ backward を呼び出す
+            # backward を一度だけ呼び出す
             total_loss.backward()
 
             if (count_step + 1) % args.num_grad_accumulation == 0:
@@ -287,7 +313,7 @@ if __name__ == "__main__":
     args.train_datasets = [d + "Val" for d in train_datasets]
 
     # 勾配の累積を使用して大きなバッチサイズをシミュレート
-    args.batch_size = 16 if args.model == "ViT-L-14" else 16
+    args.batch_size = 16 if args.model == "ViT-L-14" else 32
     args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
     if args.seed is not None:
