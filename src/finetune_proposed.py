@@ -279,6 +279,7 @@ if __name__ == "__main__":
 
         # Select all datasets before the given dataset and add "Val" to each
         args.train_datasets_to_orth = [d + "Val" for d in train_datasets[:dataset_index]]
+        print(args.train_datasets_to_orth)
         args.train_datasets_to_orth.append("ImageNetVal")
         
 
