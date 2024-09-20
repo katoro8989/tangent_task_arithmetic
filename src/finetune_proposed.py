@@ -20,7 +20,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth",
+                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth_incremental",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -249,9 +249,9 @@ def finetune(rank, args, group):
 if __name__ == "__main__":
     train_datasets = [
         "Cars",
-        # "DTD",
-        # "EuroSAT",
-        # "GTSRB",
+        "DTD",
+        "EuroSAT",
+        "GTSRB",
         # "MNIST",
         # "RESISC45",
         # "SUN397",
@@ -274,7 +274,11 @@ if __name__ == "__main__":
         args.lr = 1e-5
         args.epochs = epochs[dataset]
         args.train_dataset = dataset + "Val"
-        args.train_datasets_to_orth = [d + "Val" for d in train_datasets if d != dataset]
+        # Find the index of the dataset in train_datasets
+        dataset_index = train_datasets.index(dataset)
+
+        # Select all datasets before the given dataset and add "Val" to each
+        args.train_datasets_to_orth = [d + "Val" for d in train_datasets[:dataset_index]]
         args.train_datasets_to_orth.append("ImageNetVal")
         
 
@@ -284,9 +288,9 @@ if __name__ == "__main__":
         args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_incremental_{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints_ours/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_incremental/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
