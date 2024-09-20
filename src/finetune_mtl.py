@@ -322,8 +322,8 @@ if __name__ == "__main__":
     args.train_datasets = [d + "Val" for d in train_datasets]
 
     # 勾配の累積を使用して大きなバッチサイズをシミュレート
-    args.batch_size = 16 if args.model == "ViT-L-14" else 32
-    args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 4
+    args.batch_size = 8 if args.model == "ViT-L-14" else 32
+    args.num_grad_accumulation = 16 if args.model == "ViT-L-14" else 4
 
     if args.seed is not None:
         args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
