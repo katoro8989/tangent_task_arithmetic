@@ -25,6 +25,8 @@ def finetune(rank, args, group):
                         name=f"process_{rank}",
                         group=group, 
                         )
+    
+    print(args.train_datasets_to_orth)
 
     train_dataset = args.train_dataset
     ckpdir = os.path.join(args.save, train_dataset)
@@ -278,8 +280,7 @@ if __name__ == "__main__":
         dataset_index = train_datasets.index(dataset)
 
         # Select all datasets before the given dataset and add "Val" to each
-        args.train_datasets_to_orth = [d + "Val" for d in train_datasets[:dataset_index]]
-        print(args.train_datasets_to_orth)
+        args.train_datasets_to_orth = [d + "Val" for d in train_datasets if d != dataset ]
         args.train_datasets_to_orth.append("ImageNetVal")
         
 
