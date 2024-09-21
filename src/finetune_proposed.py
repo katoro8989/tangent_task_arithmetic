@@ -20,7 +20,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth_incremental",
+                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -248,10 +248,10 @@ def finetune(rank, args, group):
 
 if __name__ == "__main__":
     train_datasets = [
-        # "Cars",
-        # "DTD",
-        # "EuroSAT",
-        # "GTSRB",
+        "Cars",
+        "DTD",
+        "EuroSAT",
+        "GTSRB",
         "MNIST",
         "RESISC45",
         "SUN397",
@@ -289,9 +289,9 @@ if __name__ == "__main__":
         args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"/mnt/data/checkpoints_ours_original_{args.seed}/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints_ours_original/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
