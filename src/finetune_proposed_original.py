@@ -158,20 +158,38 @@ def finetune(rank, args, group):
             loss = loss_fn(logits, labels)
 
             penalty = torch.tensor(0)
-            if step > args.penalty_iter:
-                ddp_loader_to_orth = ddp_loader_iters_to_orth[step % len_orth_datasets]
-                try:
-                    batch_to_orth = next(ddp_loader_to_orth)
-                except StopIteration:
-                    ddp_loader_iters_to_orth[step % len_orth_datasets] = iter(ddp_loaders_to_orth[step % len_orth_datasets])
-                    ddp_loader_to_orth = ddp_loader_iters_to_orth[step % len_orth_datasets]
-                    batch_to_orth = next(ddp_loader_to_orth)
 
-                batch_to_orth = maybe_dictionarize(batch_to_orth)
-                inputs_to_orth = batch_to_orth["images"].cuda()
-                tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
-                dp_norms = torch.norm(tau_jacob, dim=1)
-                penalty = dp_norms.mean()
+            # Perform the penalty calculation after a certain number of iterations
+            if step > args.penalty_iter:
+                penalties = []  # List to store penalties for each dataset
+
+                # Loop through all datasets in ddp_loaders_to_orth
+                for i in range(len_orth_datasets):
+                    ddp_loader_to_orth = ddp_loader_iters_to_orth[i]
+                    
+                    try:
+                        # Get the next batch from the loader
+                        batch_to_orth = next(ddp_loader_to_orth)
+                    except StopIteration:
+                        # Reset the iterator if it has reached the end
+                        ddp_loader_iters_to_orth[i] = iter(ddp_loaders_to_orth[i])
+                        ddp_loader_to_orth = ddp_loader_iters_to_orth[i]
+                        batch_to_orth = next(ddp_loader_to_orth)
+
+                    # Process the batch
+                    batch_to_orth = maybe_dictionarize(batch_to_orth)
+                    inputs_to_orth = batch_to_orth["images"].cuda()
+
+                    # Compute tau_jacob and dp_norms for the current dataset
+                    tau_jacob = ddp_model.module.image_encoder.model.dp(inputs_to_orth)
+                    dp_norms = torch.norm(tau_jacob, dim=1)
+
+                    # Append the penalty for the current dataset to the list
+                    penalties.append(dp_norms.mean())
+
+                # Compute the average penalty across all datasets
+                if penalties:
+                    penalty = torch.stack(penalties).mean()
 
             total_loss = loss + args.penalty * penalty
             total_loss.backward()
