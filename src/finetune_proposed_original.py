@@ -272,10 +272,10 @@ if __name__ == "__main__":
         "DTD",
         "EuroSAT",
         "GTSRB",
-        # "MNIST",
-        # "RESISC45",
-        # "SUN397",
-        # "SVHN",
+        "MNIST",
+        "RESISC45",
+        "SUN397",
+        "SVHN",
     ]
     epochs = {
         "Cars": 35,
