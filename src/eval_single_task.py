@@ -9,7 +9,7 @@ args = parse_arguments()
 if args.seed is not None:
     args.save = f"/mnt/data/checkpoints_ours_incremental_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints_ours_incremental/{args.model}"
+    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
 
 accuracies = {}
 
