@@ -292,9 +292,9 @@ if __name__ == "__main__":
         args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_incremental{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints_ours/{args.model}"
+            args.save = f"/mnt/data/checkpoints_ours_incremental/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
