@@ -177,7 +177,7 @@ def evaluate_task_vector(
     task_vector, pretrained_checkpoint, args, posthoc_linearization=False
 ):
     info = {}
-    for scaling_coef in np.linspace(0.0, 1.0, args.n_eval_points):
+    for scaling_coef in np.linspace(1.0, 3.0, args.n_eval_points):
         print(f"Evaluating for scaling coefficient {scaling_coef:.2f}")
         info[scaling_coef] = evaluate_task_vector_at_coef(
             task_vector,
