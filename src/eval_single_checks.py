@@ -46,7 +46,7 @@ for check_point in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
         )
 
         finetuned_checkpoint = (
-            f"{args.save}/{dataset}Val/linear_finetuned_{check_point}.pt"
+            f"{args.save}/{dataset}Val/linear_checkpoint_{check_point}.pt"
             if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
             else f"{args.save}/{dataset}Val/finetuned.pt"
         )
