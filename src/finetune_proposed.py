@@ -20,7 +20,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth",
+                        project=f"{args.model}_{args.train_dataset}_{args.finetuning_mode}_orth_continual",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -140,6 +140,8 @@ def finetune(rank, args, group):
 
     ddp_loader_iters_to_orth = [iter(loader) for loader in ddp_loaders_to_orth]
 
+    max_steps = 1000
+
     for epoch in range(args.epochs):
         ddp_model.train()
 
@@ -225,6 +227,16 @@ def finetune(rank, args, group):
                     'loss': loss.item(), 
                 })
 
+            # optimizer.step() を行った後に最大ステップ数に達しているか確認
+            if step >= max_steps:
+                print(f"Reached maximum steps of {max_steps}. Ending training.")
+                break  # 内側のループを終了
+
+        # 外側のループで最大ステップ数に達しているか確認
+        if step >= max_steps:
+            print(f"Reached maximum steps of {max_steps}. Ending training.")
+            break  # 外側のループを終了
+
     # FIXME: Make this work with DDP.
     # if is_main_process():
     #     # We only need to evaluate the model on the first GPU.
@@ -273,6 +285,7 @@ if __name__ == "__main__":
     for dataset in train_datasets:
         args = parse_arguments()
 
+
         args.lr = 1e-5
         args.epochs = epochs[dataset]
         args.train_dataset = dataset + "Val"
@@ -291,9 +304,9 @@ if __name__ == "__main__":
         args.num_grad_accumulation = 8 if args.model == "ViT-L-14" else 1
 
         if args.seed is not None:
-            args.save = f"/mnt/data/checkpoints_ours{args.seed}/{args.model}"
+            args.save = f"/mnt/data2/checkpoints_ours_continual{args.seed}/{args.model}"
         else:
-            args.save = f"/mnt/data/checkpoints_ours/{args.model}"
+            args.save = f"/mnt/data2/checkpoints_ours_continual/{args.model}"
         print("=" * 100)
         print(f"Finetuning {args.model} on {dataset}")
         print("=" * 100)
