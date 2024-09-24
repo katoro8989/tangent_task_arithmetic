@@ -57,7 +57,8 @@ def finetune(rank, args, group):
 
     assert train_dataset is not None, "Please provide a training dataset."
 
-    if args.load is not None and args.load.endswith("pt"):
+    if args.load is not None:
+        print(f"loading checkpoint from {args.load}")
         image_encoder = (
             LinearizedImageEncoder.load(os.path.join(args.load, args.train_dataset, "linear_finetuned.pt"))
             if linearized_finetuning
