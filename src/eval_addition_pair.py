@@ -60,7 +60,7 @@ for check_point in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
             task_vectors.append(
                 NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
             )
-    args.finetuning_accuracies = finetuning_accuracies_checks[check_point]
+    args.finetuning_accuracies = finetuning_accuracies_checks[f"{check_point}"]
 
     task_vector = sum(task_vectors)
 
