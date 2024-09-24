@@ -27,13 +27,13 @@ elif args.finetuning_mode == "posthoc":
 for check_point in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
     accuracies[check_point] = {}
     eval_datasets = [
-        "Cars",
-        "DTD",
+        # "Cars",
+        # "DTD",
         "EuroSAT",
-        "GTSRB",
-        "MNIST",
-        "RESISC45",
-        "SUN397",
+        # "GTSRB",
+        # "MNIST",
+        # "RESISC45",
+        # "SUN397",
         "SVHN",
     ]
     for task_a in eval_datasets:
