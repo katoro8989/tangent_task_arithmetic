@@ -32,8 +32,6 @@ print("*" * 100)
 with open(ft_accuracies_path) as f:
     finetuning_accuracies_checks = json.load(f)
 
-with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
-    pretrained_accuracies = json.load(f)
 results_to_save = {}
 for check_point in [0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]:
     eval_datasets = [
