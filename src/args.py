@@ -117,7 +117,7 @@ def parse_arguments():
         help="Number of processes for distributed training.",
     )
     parser.add_argument(
-        "--checkpoint-every",
+        "--checkpoint_every",
         type=int,
         default=-1,
         help="How often to checkpoint the model.",
