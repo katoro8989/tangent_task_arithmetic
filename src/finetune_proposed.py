@@ -296,7 +296,7 @@ if __name__ == "__main__":
         # Select all datasets before the given dataset and add "Val" to each
         # args.train_datasets_to_orth = [d + "Val" for d in train_datasets[:dataset_index]]
         args.train_datasets_to_orth = [d + "Val" for d in train_datasets if d != dataset]
-        args.train_datasets_to_orth.append("ImageNetVal")
+        # args.train_datasets_to_orth.append("ImageNetVal")
         
 
         # We use gradient accumulation to simulate larger batch sizes if the model does not fit in memory.
