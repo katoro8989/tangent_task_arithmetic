@@ -83,7 +83,7 @@ for dataset in eval_datasets:
     }
 
 if args.finetuning_mode == "standard":
-    save_file = f"{args.save}/negations.json"
+    save_file = f"{args.save}/negations_one_shot.json"
 elif args.finetuning_mode == "linear":
     save_file = f"{args.save}/linear_negations_one_shot.json"
 elif args.finetuning_mode == "posthoc":
