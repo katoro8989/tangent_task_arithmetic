@@ -10,9 +10,9 @@ from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
 args = parse_arguments()
 
 if args.seed is not None:
-    args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
+    args.save = f"/mnt/data/checkpoints{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
+    args.save = f"/mnt/data/checkpoints/{args.model}"
 
 
 print("*" * 100)

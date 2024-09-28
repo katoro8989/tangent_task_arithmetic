@@ -13,7 +13,7 @@ args = parse_arguments()
 if args.seed is not None:
     args.save = f"/mnt/data/checkpoints_ours_{args.seed}/{args.model}"
 else:
-    args.save = f"/mnt/data/checkpoints_ours/{args.model}"
+    args.save = f"/mnt/data/checkpoints/{args.model}"
 
 with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
     pretrained_accuracies = json.load(f)
@@ -85,7 +85,7 @@ for dataset in eval_datasets:
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/negations.json"
 elif args.finetuning_mode == "linear":
-    save_file = f"{args.save}/linear_negations.json"
+    save_file = f"{args.save}/linear_negations_one_shot.json"
 elif args.finetuning_mode == "posthoc":
     save_file = f"{args.save}/posthoc_negations.json"
 
