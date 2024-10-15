@@ -45,7 +45,6 @@ def finetune(args):
 
     
     model_class = T5ForConditionalGeneration.from_pretrained(args.model)
-    model_class = LinearizedModel(model_class)
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
@@ -114,7 +113,7 @@ def finetune(args):
 
     
     trainer = Trainer(
-        model=model_class,
+        model=LinearizedModel(model_class),
         args=training_args,
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["test"],
