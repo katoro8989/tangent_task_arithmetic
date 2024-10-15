@@ -131,7 +131,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--epochs', type=float, default=1.)
-    parser.add_argument('--gradient_accumulation_steps', type=int, default=1)
+    parser.add_argument('--gradient_accumulation_steps', type=int, default=8)
     parser.add_argument('--lr', type=float, default=5e-5)
     parser.add_argument('--train_batch_size', type=int, default=2)
     parser.add_argument('--eval_batch_size', type=int, default=2)
