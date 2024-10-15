@@ -8,8 +8,8 @@ from transformers import AutoTokenizer
 
 def preprocess(
     tokenizer: AutoTokenizer,
-    input_text: str,
-    target_text: str,
+    input_text: Union[str, List[str]],
+    target_text: Union[str, List[str]],
     tokenizer_kwawgs: Dict[str, Any] = None,
 ):
     """
@@ -26,6 +26,10 @@ def preprocess(
     """
     if tokenizer_kwawgs is None:
         tokenizer_kwawgs = {}
+
+    print(f"Input text: {input_text}")
+    print(f"Target text: {target_text}")
+    
     model_inputs = tokenizer(input_text, **tokenizer_kwawgs)
     if target_text is not None:
         labels = tokenizer(target_text, **tokenizer_kwawgs)

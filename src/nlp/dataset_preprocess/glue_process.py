@@ -33,8 +33,6 @@ class CoLA_Preprocessor(DatasetPreprocessor):
                 input_text.append(_input_text)
                 target_text.append(_target_text)
 
-        print(input_text)
-        print(target_text)
         return preprocess(
             tokenizer=self.tokenizer,
             input_text=input_text,
