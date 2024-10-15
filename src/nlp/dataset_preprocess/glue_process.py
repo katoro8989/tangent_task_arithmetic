@@ -1,4 +1,4 @@
-from base_process import DatasetPreprocessor, preprocess
+from .base_process import DatasetPreprocessor, preprocess
 
 
 class CoLA_Preprocessor(DatasetPreprocessor):
