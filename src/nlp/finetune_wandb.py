@@ -133,7 +133,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=float, default=1.)
     parser.add_argument('--gradient_accumulation_steps', type=int, default=1)
     parser.add_argument('--lr', type=float, default=5e-5)
-    parser.add_argument('--train_batch_size', type=int, default=16)
+    parser.add_argument('--train_batch_size', type=int, default=4)
     parser.add_argument('--eval_batch_size', type=int, default=16)
     parser.add_argument('--warmup_steps', type=int, default=0)
     parser.add_argument('--weight_decay', type=int, default=0.01)
