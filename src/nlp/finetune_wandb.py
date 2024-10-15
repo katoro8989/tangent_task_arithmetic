@@ -10,7 +10,7 @@ import datetime
 import wandb
 import evaluate
 
-from linearize import LinearizedModel
+from linearize import LinearizedModel, LinearizedModelWraper
 
 preprocessor_mapping = {
     "cola": CoLA_Preprocessor,
@@ -113,7 +113,7 @@ def finetune(args):
 
     
     trainer = Trainer(
-        model=LinearizedModel(model_class),
+        model=LinearizedModelWraper(model_class),
         args=training_args,
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["test"],
