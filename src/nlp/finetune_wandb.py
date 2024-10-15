@@ -29,7 +29,6 @@ map_kwargs = {
 }
 
 def finetune(args):
-    train_dataset = args.dataset
     
     run_id = f'{args.model}'
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
