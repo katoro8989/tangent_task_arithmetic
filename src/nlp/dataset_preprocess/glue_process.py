@@ -20,21 +20,21 @@ class CoLA_Preprocessor(DatasetPreprocessor):
         """
         Preprocess the CoLA dataset into a text-to-text format.
         """
-        input_text, target_text = [], []
         if isinstance(example["sentence"], str):
             # not batched
-            _input_text, _target_text = self.preprocess(
+            input_text, target_text = self.preprocess(
                 example["sentence"], example["label"]
             )
-            input_text.append(_input_text)
-            target_text.append(_target_text)
         else:
             # batched
+            input_text, target_text = [], []
             for sentence, label in zip(example["sentence"], example["label"]):
                 _input_text, _target_text = self.preprocess(sentence, label)
                 input_text.append(_input_text)
                 target_text.append(_target_text)
 
+        print(input_text)
+        print(target_text)
         return preprocess(
             tokenizer=self.tokenizer,
             input_text=input_text,
