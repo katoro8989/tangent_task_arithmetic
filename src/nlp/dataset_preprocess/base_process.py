@@ -1,7 +1,7 @@
 """
 This scripts preprocess any NLP dataset into a text-to-text format.
 """
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union, List
 
 from transformers import AutoTokenizer
 
@@ -9,7 +9,7 @@ from transformers import AutoTokenizer
 def preprocess(
     tokenizer: AutoTokenizer,
     input_text: Union[str, List[str]],
-    target_text: Union[str, List[str]],
+    target_text: [str, List[str]],
     tokenizer_kwawgs: Dict[str, Any] = None,
 ):
     """
@@ -29,7 +29,7 @@ def preprocess(
 
     print(f"Input text: {input_text}")
     print(f"Target text: {target_text}")
-    
+
     model_inputs = tokenizer(input_text, **tokenizer_kwawgs)
     if target_text is not None:
         labels = tokenizer(target_text, **tokenizer_kwawgs)
