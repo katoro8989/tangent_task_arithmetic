@@ -27,8 +27,10 @@ def preprocess(
     if tokenizer_kwawgs is None:
         tokenizer_kwawgs = {}
 
-    print(f"Input text: {input_text}")
-    print(f"Target text: {target_text}")
+    # input_text と target_text がリストであることを確認
+    assert isinstance(input_text, list), f"input_text must be a list, but got {type(input_text)}"
+    assert isinstance(target_text, list), f"target_text must be a list, but got {type(target_text)}"
+    
 
     model_inputs = tokenizer(input_text, **tokenizer_kwawgs)
     if target_text is not None:
