@@ -113,7 +113,8 @@ def finetune(args):
 
     
     trainer = Trainer(
-        model=LinearizedModelWraper(model_class),
+        # model=LinearizedModelWraper(model_class),
+        model=model_class,
         args=training_args,
         train_dataset=encoded_dataset["train"],
         eval_dataset=encoded_dataset["test"],
