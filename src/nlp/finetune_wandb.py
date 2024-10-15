@@ -81,13 +81,7 @@ def finetune(args):
         eval_accumulation_steps=args.eval_accumulation_steps, 
         auto_find_batch_size=args.auto_find_batch_size, 
     )
-    
-    print(training_args.device)
-    
-    sample_batch = next(iter(dataset_class["train"]))
-    print(np.array(sample_batch["input_ids"]).shape)
-    print(np.array(sample_batch["attention_mask"]).shape)
-    print(np.array(sample_batch["labels"]).shape)
+
     
     metric = evaluate.load("accuracy")
     
