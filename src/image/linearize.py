@@ -5,6 +5,9 @@ import torch
 import torch.nn as nn
 from functorch import jvp, make_functional_with_buffers
 
+from copy import deepcopy
+
+
 from src.modeling import ImageEncoder
 from src.utils import DotDict
 

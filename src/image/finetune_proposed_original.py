@@ -5,15 +5,15 @@ import torch
 import uuid
 import wandb
 
-from src.args import parse_arguments
-from src.datasets.common import get_dataloader, maybe_dictionarize
-from src.datasets.registry import get_dataset
-from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
-from src.eval import eval_single_dataset
-from src.heads import get_classification_head
-from src.linearize import LinearizedImageEncoder
-from src.modeling import ImageClassifier, ImageEncoder
-from src.utils import LabelSmoothing, cosine_lr
+from args import parse_arguments
+from datasets.common import get_dataloader, maybe_dictionarize
+from datasets.registry import get_dataset
+from distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
+from eval import eval_single_dataset
+from heads import get_classification_head
+from linearize import LinearizedImageEncoder
+from modeling import ImageClassifier, ImageEncoder
+from utils import LabelSmoothing, cosine_lr
 
 
 def finetune(rank, args, group):
