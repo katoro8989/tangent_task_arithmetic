@@ -21,6 +21,12 @@ preprocessor_mapping = {
     "stsb": STSB_Preprocessor,
 }
 
+tokenizer_kwargs = {
+  "padding": "max_length",
+  "truncation": True,
+  "return_tensors": "pt",
+}
+
 map_kwargs = {
     "remove_columns": ["sentence", "label", "idx"],
     "batched": True,
