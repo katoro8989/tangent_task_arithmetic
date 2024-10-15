@@ -49,7 +49,7 @@ def finetune(args):
     dataset_class = load_dataset("glue", args.task)
     
     preprocessor_class = preprocessor_mapping[args.task]
-    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=None)
+    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=tokenizer_kwargs)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
     
     if args.wandb:
