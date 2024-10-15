@@ -10,6 +10,8 @@ import datetime
 import wandb
 import evaluate
 
+from linearize import LinearizedModel
+
 preprocessor_mapping = {
     "cola": CoLA_Preprocessor,
     "rte": RTE_Preprocessor,
@@ -43,6 +45,7 @@ def finetune(args):
 
     
     model_class = T5ForConditionalGeneration.from_pretrained(args.model)
+    model_class = LinearizedModel(model_class)
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
