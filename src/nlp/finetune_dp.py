@@ -90,7 +90,7 @@ def finetune(args):
     labels = labels.to(device)
 
     # モデルもデバイスに転送
-    model = model.to(device)
+    model = model_class.to(device)
 
     # モデルにサンプルデータを入力し、出力を取得
     model.eval()  # 評価モードにする
