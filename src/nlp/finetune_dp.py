@@ -75,10 +75,11 @@ def finetune(args):
     print("Sample attention_mask:", sample["attention_mask"])
     print("Sample labels:", sample["labels"])
 
-    # モデルに入力するためにサンプルの input_ids と attention_mask を取得
-    input_ids = sample["input_ids"].unsqueeze(0)  # バッチ次元を追加 (1, sequence_length)
-    attention_mask = sample["attention_mask"].unsqueeze(0)  # バッチ次元を追加
-    labels = sample["labels"].unsqueeze(0)  # ラベルもバッチ次元を追加
+    # input_ids と attention_mask をリストからテンソルに変換
+    input_ids = torch.tensor(sample["input_ids"]).unsqueeze(0)  # リストをテンソルに変換してバッチ次元を追加
+    attention_mask = torch.tensor(sample["attention_mask"]).unsqueeze(0)  # 同様にテンソルに変換してバッチ次元を追加
+    labels = torch.tensor(sample["labels"]).unsqueeze(0)  # ラベルも同様にテンソルに変換
+
 
     # デバイスの設定
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
