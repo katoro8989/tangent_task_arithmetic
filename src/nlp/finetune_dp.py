@@ -74,6 +74,8 @@ def finetune(rank, args, group):
     if args.ft_method == "linear":
         linearized_finetuning = True
         model = LinearizedModelWraper(model)
+    else:
+        linearized_finetuning = False
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
