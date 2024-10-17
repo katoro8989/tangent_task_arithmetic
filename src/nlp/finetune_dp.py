@@ -11,6 +11,11 @@ import wandb
 import evaluate
 from torch.utils.data import DataLoader
 
+from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
+from src.utils import LabelSmoothing, cosine_lr
+
+
+
 
 from linearize import LinearizedModel, LinearizedModelWraper, SimpleCallableT5Model
 
@@ -38,7 +43,18 @@ map_kwargs = {
     "desc": "Running tokenizer on dataset"
 }
 
-def finetune(args):
+def finetune(rank, args, group):
+    setup_ddp(rank, args.world_size, port=args.port)
+
+    train_dataset = args.task
+    ckpdir = os.path.join(args.save, "GLUE", train_dataset)
+
+    run = wandb.init(config=vars(args),
+                        project=f"{args.model}_GLUE_{args.train_dataset}_{args.finetuning_mode}",
+                        entity='katoro13',
+                        name=f"process_{rank}",
+                        group=group, 
+                        )
     
     run_id = f'{args.model}'
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -46,7 +62,12 @@ def finetune(args):
     output_dir = os.path.join(args.output_dir, run_id)
 
     
-    model_class = T5ForConditionalGeneration.from_pretrained(args.model)
+    hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
+    model = simple_model_class = SimpleCallableT5Model(hf_t5_model)
+
+    if args.tf_method == "linear":
+        linearized_finetuning = True
+        model = LinearizedModelWraper(model)
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
@@ -55,187 +76,126 @@ def finetune(args):
     preprocessor_class = preprocessor_mapping[args.task]
     preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=tokenizer_kwargs)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
-    
-    if args.wandb:
-        report = "wandb"
-        print("=====wandb logging starts=====")
-        wandb.init(project="flan-t5_glue",
-            name=run_id,
-            group="katoro13")
-    else:
-        report = None
+
+    # DataLoaderの作成
+    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True)
+    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size)
 
     
+    # Distribute the data and model across the GPUs.
+    ddp_train_loader = distribute_loader(train_dataloader)
+    ddp_eval_loader = distribute_loader(eval_dataloader)
+    ddp_model = torch.nn.parallel.DistributedDataParallel(
+        model,
+        device_ids=[rank],
+        find_unused_parameters=True,
+        output_device=rank,
+    )
 
-    simple_model_class = SimpleCallableT5Model(model_class)
+    loss_fn = torch.nn.CrossEntropyLoss()
 
+    params = [p for p in ddp_model.parameters() if p.requires_grad]
+    optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.wd)
 
-    
-    
-    model_class = LinearizedModelWraper(simple_model_class)
+    num_batches = len(encoded_dataset["train"])
+    scheduler = cosine_lr(
+        optimizer,
+        args.lr,
+        args.warmup_length,
+        args.epochs * num_batches // args.num_grad_accumulation,
+    )
 
-    sample = encoded_dataset["train"][0]  # "train"データセットの最初のサンプル
+    # Saving zero-shot model
+    if args.save is not None and is_main_process():
+        os.makedirs(ckpdir, exist_ok=True)
+        model_path = (
+            os.path.join(ckpdir, "linear_zeroshot.pt")
+            if linearized_finetuning
+            else os.path.join(ckpdir, "zeroshot.pt")
+        )
+        ddp_model.module.model.save(model_path)
 
-    # input_ids と attention_mask をリストからテンソルに変換
-    input_ids = torch.tensor(sample["input_ids"]).unsqueeze(0)  # リストをテンソルに変換してバッチ次元を追加
-    attention_mask = torch.tensor(sample["attention_mask"]).unsqueeze(0)  # 同様にテンソルに変換してバッチ次元を追加
-    labels = torch.tensor(sample["labels"]).unsqueeze(0)  # ラベルも同様にテンソルに変換
-
-
-    # デバイスの設定
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
 
-    # サンプルデータをデバイスに転送
-    input_ids = input_ids.to(device)
-    attention_mask = attention_mask.to(device)
-    labels = labels.to(device)
+    print_every = 100
 
-    # モデルもデバイスに転送
-    model = model_class.to(device)
-    simple_model_class = simple_model_class.to(device)
+    for epoch in range(args.epochs):
+        ddp_model.train()
 
-    # モデルにサンプルデータを入力し、出力を取得
-    model.eval()  # 評価モードにする
-    with torch.no_grad():  # 勾配計算を無効化
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        simple_outputs = simple_model_class(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        for i, batch in enumerate(ddp_train_loader):
+            start_time = time.time()
 
-    print("original logits", simple_outputs)
-    print("linarized logit", outputs)
+            step = (
+                i // args.num_grad_accumulation
+                + epoch * num_batches // args.num_grad_accumulation
+            )
 
-    
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+            data_time = time.time() - start_time
 
+            logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    
+            loss = loss_fn(logits, labels)
 
+            loss.backward()
 
-    # # DataLoaderの作成
-    # train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True)
-    # eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size)
+            if (i + 1) % args.num_grad_accumulation == 0:
+                scheduler(step)
 
-    
-    # # Distribute the data and model across the GPUs.
-    # ddp_loader = distribute_loader(data_loader)
-    # ddp_model = torch.nn.parallel.DistributedDataParallel(
-    #     model,
-    #     device_ids=[rank],
-    #     find_unused_parameters=True,
-    #     output_device=rank,
-    # )
+                torch.nn.utils.clip_grad_norm_(params, 1.0)
+                optimizer.step()
+                optimizer.zero_grad()
 
-    # if args.ls > 0:
-    #     loss_fn = LabelSmoothing(args.ls)
-    # else:
-    #     loss_fn = torch.nn.CrossEntropyLoss()
+            batch_time = time.time() - start_time
 
-    # params = [p for p in ddp_model.parameters() if p.requires_grad]
-    # optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.wd)
+            if (
+                args.checkpoint_every > 0
+                and step % args.checkpoint_every == 0
+                and is_main_process()
+            ):
+                print("Saving checkpoint.")
+                model_path = (
+                    os.path.join(ckpdir, f"linear_checkpoint_{step}.pt")
+                    if linearized_finetuning
+                    else os.path.join(ckpdir, f"checkpoint_{step}.pt")
+                )
+                ddp_model.module.model.save(model_path)
 
-    # scheduler = cosine_lr(
-    #     optimizer,
-    #     args.lr,
-    #     args.warmup_length,
-    #     args.epochs * num_batches // args.num_grad_accumulation,
-    # )
+            if (
+                step % print_every == 0
+                and ((i + 1) % args.num_grad_accumulation == 0)
+                and is_main_process()
+            ):
+                percent_complete = 100 * i / len(ddp_train_loader)
 
-    # # Saving zero-shot model
-    # if args.save is not None and is_main_process():
-    #     os.makedirs(ckpdir, exist_ok=True)
-    #     model_path = (
-    #         os.path.join(ckpdir, "linear_zeroshot.pt")
-    #         if linearized_finetuning
-    #         else os.path.join(ckpdir, "zeroshot.pt")
-    #     )
-    #     ddp_model.module.image_encoder.save(model_path)
+                print(
+                    f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(ddp_train_loader)}]\t"  # noqa: E501
+                    f"Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+                    flush=True,
+                )
+                run.log({
+                    'step': step,
+                    'train_loss': loss.item(),
+                })
 
-    # for epoch in range(args.epochs):
-    #     ddp_model.train()
+    if args.save is not None and is_main_process():
+        zs_path = (
+            os.path.join(ckpdir, "linear_zeroshot.pt")
+            if linearized_finetuning
+            else os.path.join(ckpdir, "zeroshot.pt")
+        )
+        ft_path = (
+            os.path.join(ckpdir, "linear_finetuned.pt")
+            if linearized_finetuning
+            else os.path.join(ckpdir, "finetuned.pt")
+        )
+        model.save(ft_path)
+        return zs_path, ft_path
 
-    #     for i, batch in enumerate(ddp_loader):
-    #         start_time = time.time()
-
-    #         step = (
-    #             i // args.num_grad_accumulation
-    #             + epoch * num_batches // args.num_grad_accumulation
-    #         )
-
-    #         batch = maybe_dictionarize(batch)
-    #         inputs = batch["images"].cuda()
-    #         labels = batch["labels"].cuda()
-    #         data_time = time.time() - start_time
-
-    #         logits = ddp_model(inputs)
-
-    #         loss = loss_fn(logits, labels)
-
-    #         loss.backward()
-
-    #         if (i + 1) % args.num_grad_accumulation == 0:
-    #             scheduler(step)
-
-    #             torch.nn.utils.clip_grad_norm_(params, 1.0)
-    #             optimizer.step()
-    #             optimizer.zero_grad()
-
-    #         batch_time = time.time() - start_time
-
-    #         if (
-    #             args.checkpoint_every > 0
-    #             and step % args.checkpoint_every == 0
-    #             and is_main_process()
-    #         ):
-    #             print("Saving checkpoint.")
-    #             model_path = (
-    #                 os.path.join(ckpdir, f"linear_checkpoint_{step}.pt")
-    #                 if linearized_finetuning
-    #                 else os.path.join(ckpdir, f"checkpoint_{step}.pt")
-    #             )
-    #             ddp_model.module.image_encoder.save(model_path)
-
-    #         if (
-    #             step % print_every == 0
-    #             and ((i + 1) % args.num_grad_accumulation == 0)
-    #             and is_main_process()
-    #         ):
-    #             percent_complete = 100 * i / len(ddp_loader)
-
-    #             _, preds = torch.max(logits, 1)
-    #             correct = torch.sum(preds == labels).item()
-    #             accuracy = correct / labels.size(0)
-
-    #             print(
-    #                 f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(dataset.train_loader)}]\t"  # noqa: E501
-    #                 f"Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-    #                 f"Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-    #                 flush=True,
-    #             )
-    #             run.log({
-    #                 'step': step,
-    #                 'train_loss': loss.item(),
-    #                 'train_accuracy': accuracy, 
-    #             })
-
-    # # FIXME: Make this work with DDP.
-    # if is_main_process():
-    #     # We only need to evaluate the model on the first GPU.
-    #     image_encoder = ddp_model.module.image_encoder
-    #     eval_single_dataset(image_encoder, train_dataset, args)
-
-    # if args.save is not None and is_main_process():
-    #     zs_path = (
-    #         os.path.join(ckpdir, "linear_zeroshot.pt")
-    #         if linearized_finetuning
-    #         else os.path.join(ckpdir, "zeroshot.pt")
-    #     )
-    #     ft_path = (
-    #         os.path.join(ckpdir, "linear_finetuned.pt")
-    #         if linearized_finetuning
-    #         else os.path.join(ckpdir, "finetuned.pt")
-    #     )
-    #     image_encoder.save(ft_path)
-    #     return zs_path, ft_path
-
-    # cleanup_ddp()
+    cleanup_ddp()
 
 
 if __name__ == '__main__':
@@ -244,7 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--epochs', type=float, default=1.)
-    parser.add_argument('--gradient_accumulation_steps', type=int, default=1)
+    parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=5e-5)
     parser.add_argument('--train_batch_size', type=int, default=4)
     parser.add_argument('--eval_batch_size', type=int, default=2)
@@ -261,7 +221,21 @@ if __name__ == '__main__':
     parser.add_argument('--eval_accumulation_steps', type=int, default=10)
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--auto_find_batch_size', action='store_true')
+    parser.add_argument('--ft_method', type=str, default="standard")
     args = parser.parse_args()
-                    
-    
-    finetune(args)
+
+    # HACK: Some command line arguments are overwritten by defaults here.
+    args.world_size = 4
+    args.port = 12345
+
+    if args.seed is not None:
+        args.save = f"checkpoints_{args.seed}/{args.model}"
+    else:
+        args.save = f"checkpoints/{args.model}"
+
+    print("=" * 100)
+    print(f"Finetuning {args.model} on {args.task}")
+    print("=" * 100)
+
+    torch.multiprocessing.spawn(finetune, args=(args,), nprocs=args.world_size)
+                
