@@ -144,3 +144,6 @@ class SimpleCallableT5Model(nn.Module):
     
     def forward(self, input_ids, attention_mask, labels):
         return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).logits
+    
+    def save_pretrained(self, path):
+        self.model.save_pretrained(path)
