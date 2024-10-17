@@ -12,7 +12,7 @@ import evaluate
 from torch.utils.data import DataLoader
 
 
-from linearize import LinearizedModel, LinearizedModelWraper
+from linearize import LinearizedModel, LinearizedModelWraper, SimpleCallableT5Model
 
 preprocessor_mapping = {
     "cola": CoLA_Preprocessor,
@@ -65,8 +65,17 @@ def finetune(args):
     else:
         report = None
 
+    
+
     for name, param in model_class.named_parameters():
         print(name, param.shape)
+
+    simple_model_class = SimpleCallableT5Model(model_class)
+
+    for name, param in simple_model_class.named_parameters():
+        print(name, param.shape)
+    
+    model_class = LinearizedModelWraper(simple_model_class)
 
     sample = encoded_dataset["train"][0]  # "train"データセットの最初のサンプル
 
