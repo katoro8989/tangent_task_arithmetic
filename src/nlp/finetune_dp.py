@@ -86,8 +86,20 @@ def finetune(rank, args, group):
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
 
     # DataLoaderの作成
-    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=default_collate)
-    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=default_collate)
+    # カスタム collate_fn の定義
+    def collate_fn(batch):
+        # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+        input_ids = torch.tensor([item['input_ids'] for item in batch])
+        attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+        labels = torch.tensor([item['labels'] for item in batch])
+        
+        return {
+            'input_ids': input_ids,
+            'attention_mask': attention_mask,
+            'labels': labels
+        }
+    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
+    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
     
     # Distribute the data and model across the GPUs.
