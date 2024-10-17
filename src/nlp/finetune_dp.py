@@ -204,7 +204,7 @@ def finetune(rank, args, group):
                         attention_mask = batch['attention_mask'].to(device)
                         labels = batch['labels'].to(device)
 
-                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=None)
+                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
                         logits = outputs
 
                         preds = torch.argmax(logits, dim=-1)
