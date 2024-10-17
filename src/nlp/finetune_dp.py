@@ -67,22 +67,14 @@ def finetune(args):
 
     
 
-    for name, param in model_class.named_parameters():
-        print(name, param.shape)
-
     simple_model_class = SimpleCallableT5Model(model_class)
 
-    for name, param in simple_model_class.named_parameters():
-        print(name, param.shape)
+
+    
     
     model_class = LinearizedModelWraper(simple_model_class)
 
     sample = encoded_dataset["train"][0]  # "train"データセットの最初のサンプル
-
-    # サンプル内容を表示
-    print("Sample input_ids:", sample["input_ids"])
-    print("Sample attention_mask:", sample["attention_mask"])
-    print("Sample labels:", sample["labels"])
 
     # input_ids と attention_mask をリストからテンソルに変換
     input_ids = torch.tensor(sample["input_ids"]).unsqueeze(0)  # リストをテンソルに変換してバッチ次元を追加
@@ -100,27 +92,16 @@ def finetune(args):
 
     # モデルもデバイスに転送
     model = model_class.to(device)
+    simple_model_class = simple_model_class.to(device)
 
     # モデルにサンプルデータを入力し、出力を取得
     model.eval()  # 評価モードにする
     with torch.no_grad():  # 勾配計算を無効化
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        simple_outputs = simple_model_class(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    # モデルの出力（ロジットや損失）を取得
-    logits = outputs  # 生の出力 (logits)
-
-    print("logit", logits)
-
-    # ロジットから最も高い確率のトークンIDを取得
-    predicted_ids = torch.argmax(logits, dim=-1)
-
-    # トークンIDをデコードしてテキストとして表示
-    predicted_text = tokenizer.batch_decode(predicted_ids, skip_special_tokens=True)
-    print("Predicted text:", predicted_text)
-
-    # オリジナルのテキストも確認
-    decoded_input = tokenizer.decode(sample["input_ids"], skip_special_tokens=True)
-    print("Original input text:", decoded_input)
+    print("original logits", simple_outputs)
+    print("linarized logit", outputs)
 
     
 
