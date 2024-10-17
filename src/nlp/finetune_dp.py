@@ -107,7 +107,7 @@ def finetune(args):
         outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
     # モデルの出力（ロジットや損失）を取得
-    logits = outputs.logits  # 生の出力 (logits)
+    logits = outputs  # 生の出力 (logits)
 
     print("logit", logits)
 
