@@ -136,3 +136,10 @@ class LinearizedModelWraper(nn.Module):
             dparams,
         )
         return out + dp
+
+class SimpleCallableT5Model(nn.Module):
+    def __init__(self, model: T5ForConditionalGeneration):
+        self.model = model
+    
+    def forward(self, input_ids, attention_mask, labels):
+        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).logits
