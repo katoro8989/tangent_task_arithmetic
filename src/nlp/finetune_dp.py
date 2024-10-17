@@ -117,7 +117,7 @@ def finetune(rank, args, group):
         output_device=rank,
     )
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     params = [p for p in ddp_model.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.wd)
@@ -160,7 +160,8 @@ def finetune(rank, args, group):
 
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-            loss = loss_fn(logits, labels)
+            # loss = loss_fn(logits, labels)
+            loss = loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
 
             loss.backward()
 
