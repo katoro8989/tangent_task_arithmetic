@@ -10,6 +10,7 @@ import argparse
 import datetime
 import wandb
 import evaluate
+import uuid
 from torch.utils.data import DataLoader
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
@@ -240,5 +241,7 @@ if __name__ == '__main__':
     print(f"Finetuning {args.model} on {args.task}")
     print("=" * 100)
 
-    torch.multiprocessing.spawn(finetune, args=(args,), nprocs=args.world_size)
+    group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
+
+    torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
                 
