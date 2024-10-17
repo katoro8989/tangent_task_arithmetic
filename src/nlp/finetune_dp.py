@@ -98,6 +98,7 @@ def finetune(rank, args, group):
             'attention_mask': attention_mask,
             'labels': labels
         }
+    
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 

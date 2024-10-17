@@ -36,4 +36,5 @@ def distribute_loader(loader):
         ),
         num_workers=loader.num_workers,
         pin_memory=loader.pin_memory,
+        collate_fn=loader.collate_fn,
     )
