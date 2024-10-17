@@ -12,17 +12,17 @@ import wandb
 import evaluate
 import uuid
 from torch.utils.data import DataLoader, default_collate
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
-from src.utils import LabelSmoothing, cosine_lr
+from src.utils import cosine_lr
 
 
 
 
-from linearize import LinearizedModel, LinearizedModelWraper, SimpleCallableT5Model
+from linearize import LinearizedModelWraper, SimpleCallableT5Model
 
 preprocessor_mapping = {
     "cola": CoLA_Preprocessor,
@@ -144,6 +144,7 @@ def finetune(rank, args, group):
 
     print_every = 100
     max_steps = args.max_steps
+    iter = 0
 
     for epoch in range(args.epochs):
         ddp_model.train()
@@ -173,6 +174,7 @@ def finetune(rank, args, group):
 
                 torch.nn.utils.clip_grad_norm_(params, 1.0)
                 optimizer.step()
+                iter += 1
                 optimizer.zero_grad()
 
             batch_time = time.time() - start_time
@@ -218,26 +220,29 @@ def finetune(rank, args, group):
 
                 # sklearn の accuracy_score を使って精度を計算
                 accuracy = accuracy_score(all_labels, all_preds)
+                mcc = matthews_corrcoef(all_labels, all_preds)
                 percent_complete = 100 * i / len(ddp_train_loader)
 
                 print(
                     f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(ddp_train_loader)}]\t"  # noqa: E501
                     f"Val Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+                    f"Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
                     'step': step,
                     'val_loss': loss.item(),
                     'val_accuracy': accuracy,
+                    'val_mcc': mcc,
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
-            if  is_main_process() and step >= max_steps:
+            if  iter >= max_steps:
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
         # 外側のループで最大ステップ数に達しているか確認
-        if is_main_process() and step >= max_steps:
+        if iter >= max_steps:
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
 
