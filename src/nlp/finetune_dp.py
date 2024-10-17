@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import torch
 import numpy as np
@@ -11,6 +12,7 @@ import wandb
 import evaluate
 from torch.utils.data import DataLoader
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.utils import LabelSmoothing, cosine_lr
 
