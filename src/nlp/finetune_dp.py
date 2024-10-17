@@ -52,8 +52,11 @@ def finetune(rank, args, group):
     train_dataset = args.task
     ckpdir = os.path.join(args.save, train_dataset)
 
+    if "/" in args.model:
+        model_name = args.model.split("/")[-1]
+
     run = wandb.init(config=vars(args),
-                        project=f"{args.model}_GLUE_{train_dataset}_{args.ft_method}",
+                        project=f"{model_name}_GLUE_{train_dataset}_{args.ft_method}",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
