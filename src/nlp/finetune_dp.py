@@ -12,6 +12,8 @@ import wandb
 import evaluate
 import uuid
 from torch.utils.data import DataLoader, default_collate
+from sklearn.metrics import accuracy_score
+
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
@@ -141,6 +143,7 @@ def finetune(rank, args, group):
         ddp_model.module.model.save_pretrained(model_path)
 
     print_every = 100
+    max_steps = args.max_steps
 
     for epoch in range(args.epochs):
         ddp_model.train()
@@ -192,17 +195,51 @@ def finetune(rank, args, group):
                 and ((i + 1) % args.num_grad_accumulation == 0)
                 and is_main_process()
             ):
+                ddp_model.eval()
+                all_preds = []
+                all_labels = []
+                with torch.no_grad():
+                    for batch in ddp_eval_loader:
+                        input_ids = batch['input_ids'].to(device)
+                        attention_mask = batch['attention_mask'].to(device)
+                        labels = batch['labels'].to(device)
+
+                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask)
+                        logits = outputs.logits
+
+                        preds = torch.argmax(logits, dim=-1)
+
+                        mask = labels != -100
+                        preds_valid = preds[mask]
+                        labels_valid = labels[mask]
+
+                        all_preds.extend(preds_valid.cpu().numpy())
+                        all_labels.extend(labels_valid.cpu().numpy())
+
+                # sklearn の accuracy_score を使って精度を計算
+                accuracy = accuracy_score(all_labels, all_preds)
                 percent_complete = 100 * i / len(ddp_train_loader)
 
                 print(
                     f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(ddp_train_loader)}]\t"  # noqa: E501
-                    f"Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+                    f"Val Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+                    f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
                     'step': step,
-                    'train_loss': loss.item(),
+                    'val_loss': loss.item(),
+                    'val_accuracy': accuracy,
                 })
+            # optimizer.step() を行った後に最大ステップ数に達しているか確認
+            if step >= max_steps:
+                print(f"Reached maximum steps of {max_steps}. Ending training.")
+                break  # 内側のループを終了
+
+        # 外側のループで最大ステップ数に達しているか確認
+        if step >= max_steps:
+            print(f"Reached maximum steps of {max_steps}. Ending training.")
+            break  # 外側のループを終了
 
     if args.save is not None and is_main_process():
         zs_path = (
@@ -226,9 +263,10 @@ if __name__ == '__main__':
     parser.add_argument('--task', type=str, default="cola")
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
-    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--max_steps', type=int, default=2000)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
-    parser.add_argument('--lr', type=float, default=5e-5)
+    parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)
     parser.add_argument('--eval_batch_size', type=int, default=8)
     parser.add_argument('--warmup_length', type=int, default=0)
