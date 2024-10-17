@@ -91,6 +91,10 @@ def finetune(rank, args, group):
     # Distribute the data and model across the GPUs.
     ddp_train_loader = distribute_loader(train_dataloader)
     ddp_eval_loader = distribute_loader(eval_dataloader)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    
     ddp_model = torch.nn.parallel.DistributedDataParallel(
         model,
         device_ids=[rank],
@@ -120,9 +124,6 @@ def finetune(rank, args, group):
             else os.path.join(ckpdir, "zeroshot.pt")
         )
         ddp_model.module.model.save(model_path)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = model.to(device)
 
     print_every = 100
 
