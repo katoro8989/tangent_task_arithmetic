@@ -133,9 +133,9 @@ def finetune(rank, args, group):
     if args.save is not None and is_main_process():
         os.makedirs(ckpdir, exist_ok=True)
         model_path = (
-            os.path.join(ckpdir, "linear_zeroshot.pt")
+            os.path.join(ckpdir, "linear_zeroshot")
             if linearized_finetuning
-            else os.path.join(ckpdir, "zeroshot.pt")
+            else os.path.join(ckpdir, "zeroshot")
         )
         ddp_model.module.model.save(model_path)
 
@@ -179,11 +179,11 @@ def finetune(rank, args, group):
             ):
                 print("Saving checkpoint.")
                 model_path = (
-                    os.path.join(ckpdir, f"linear_checkpoint_{step}.pt")
+                    os.path.join(ckpdir, f"linear_checkpoint_{step}")
                     if linearized_finetuning
-                    else os.path.join(ckpdir, f"checkpoint_{step}.pt")
+                    else os.path.join(ckpdir, f"checkpoint_{step}")
                 )
-                ddp_model.module.model.save(model_path)
+                ddp_model.module.model.save_pretrained(model_path)
 
             if (
                 step % print_every == 0
@@ -204,16 +204,16 @@ def finetune(rank, args, group):
 
     if args.save is not None and is_main_process():
         zs_path = (
-            os.path.join(ckpdir, "linear_zeroshot.pt")
+            os.path.join(ckpdir, "linear_zeroshot")
             if linearized_finetuning
-            else os.path.join(ckpdir, "zeroshot.pt")
+            else os.path.join(ckpdir, "zeroshot")
         )
         ft_path = (
-            os.path.join(ckpdir, "linear_finetuned.pt")
+            os.path.join(ckpdir, "linear_finetuned")
             if linearized_finetuning
-            else os.path.join(ckpdir, "finetuned.pt")
+            else os.path.join(ckpdir, "finetuned")
         )
-        model.save(ft_path)
+        ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
 
     cleanup_ddp()
