@@ -71,7 +71,7 @@ def finetune(rank, args, group):
     hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
     model = simple_model_class = SimpleCallableT5Model(hf_t5_model)
 
-    if args.tf_method == "linear":
+    if args.ft_method == "linear":
         linearized_finetuning = True
         model = LinearizedModelWraper(model)
     
