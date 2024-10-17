@@ -204,7 +204,7 @@ def finetune(rank, args, group):
                         attention_mask = batch['attention_mask'].to(device)
                         labels = batch['labels'].to(device)
 
-                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=None)
                         logits = outputs
 
                         preds = torch.argmax(logits, dim=-1)
@@ -232,12 +232,12 @@ def finetune(rank, args, group):
                     'val_accuracy': accuracy,
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
-            if step >= max_steps:
+            if  is_main_process() and step >= max_steps:
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
         # 外側のループで最大ステップ数に達しているか確認
-        if step >= max_steps:
+        if is_main_process() and step >= max_steps:
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
 
