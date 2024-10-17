@@ -11,7 +11,7 @@ import datetime
 import wandb
 import evaluate
 import uuid
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, default_collate
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
@@ -86,8 +86,8 @@ def finetune(rank, args, group):
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
 
     # DataLoaderの作成
-    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True)
-    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size)
+    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=default_collate)
+    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=default_collate)
 
     
     # Distribute the data and model across the GPUs.
