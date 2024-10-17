@@ -47,7 +47,7 @@ def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
     train_dataset = args.task
-    ckpdir = os.path.join(args.save, "GLUE", train_dataset)
+    ckpdir = os.path.join(args.save, train_dataset)
 
     run = wandb.init(config=vars(args),
                         project=f"{args.model}_GLUE_{args.train_dataset}_{args.finetuning_mode}",
@@ -227,11 +227,12 @@ if __name__ == '__main__':
     # HACK: Some command line arguments are overwritten by defaults here.
     args.world_size = 4
     args.port = 12345
+    args.seed = 42
 
     if args.seed is not None:
-        args.save = f"checkpoints_{args.seed}/{args.model}"
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
     else:
-        args.save = f"checkpoints/{args.model}"
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
 
     print("=" * 100)
     print(f"Finetuning {args.model} on {args.task}")
