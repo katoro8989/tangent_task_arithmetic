@@ -128,6 +128,7 @@ class LinearizedModelWraper(nn.Module):
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+        print(dparams)
         out, dp = jvp(
             lambda *param: functional_call(
                 self.model, self.tuple_params_to_dict(param), args, kwargs
