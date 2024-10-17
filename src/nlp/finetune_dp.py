@@ -94,7 +94,7 @@ def finetune(rank, args, group):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    
+
     ddp_model = torch.nn.parallel.DistributedDataParallel(
         model,
         device_ids=[rank],
@@ -215,8 +215,8 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=5e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)
     parser.add_argument('--eval_batch_size', type=int, default=8)
-    parser.add_argument('--warmup_steps', type=int, default=0)
-    parser.add_argument('--weight_decay', type=int, default=0.01)
+    parser.add_argument('--warmup_length', type=int, default=0)
+    parser.add_argument('--wd', type=int, default=0.01)
     parser.add_argument('--fp16', action='store_true', help='whether fp16')
     parser.add_argument('--logging_dir', type=int, default=None)
     parser.add_argument('--logging_strategy', type=str, default="steps")
@@ -229,6 +229,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--auto_find_batch_size', action='store_true')
     parser.add_argument('--ft_method', type=str, default="standard")
+    parser.add_argument('--checkpoint_every', type=int, default=-1)
     args = parser.parse_args()
 
     # HACK: Some command line arguments are overwritten by defaults here.
