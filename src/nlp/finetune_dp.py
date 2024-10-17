@@ -137,7 +137,7 @@ def finetune(rank, args, group):
             if linearized_finetuning
             else os.path.join(ckpdir, "zeroshot")
         )
-        ddp_model.module.model.save(model_path)
+        ddp_model.module.model.save_pretrained(model_path)
 
     print_every = 100
 
