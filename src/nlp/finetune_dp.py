@@ -48,11 +48,7 @@ def finetune(rank, args, group):
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
-    if args.task == "mnli":
-        task_dataset_name = "mnli_matched"
-    else:
-        task_dataset_name = args.task
-    dataset_class = load_dataset("glue", task_dataset_name)
+    dataset_class = load_dataset("glue", args.task)
     
     preprocessor_class = get_preprocessor(args.task)
     preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
@@ -73,8 +69,12 @@ def finetune(rank, args, group):
             'labels': labels
         }
     
-    train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
-    eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
+    if args.task == "mnli":
+        train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
+        eval_dataloader = DataLoader(encoded_dataset["validation_matched"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
+    else:
+        train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
+        eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
     
     # Distribute the data and model across the GPUs.
