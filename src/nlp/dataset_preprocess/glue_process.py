@@ -1,5 +1,35 @@
 from .base_process import DatasetPreprocessor, preprocess
 
+
+def get_preprocessor(task_name: str):
+    """
+    Get the preprocessor for the specified task.
+    """
+    if task_name == "cola":
+        return CoLA_Preprocessor
+    elif task_name == "mnli":
+        return MNLI_Preprocessor
+    elif task_name == "mrpc":
+        return MRPC_Preprocessor
+    elif task_name == "qnli":
+        return QNLI_Preprocessor
+    elif task_name == "qqp":
+        return QQP_Preprocessor
+    elif task_name == "rte":
+        return RTE_Preprocessor
+    elif task_name == "sst2":
+        return SST2_Preprocessor
+    elif task_name == "stsb":
+        return STSB_Preprocessor
+    else:
+        raise ValueError(f"Task {task_name} not recognized.")
+
+def get_map_kwargs(task_name: str):
+    """
+    Get the map_kwargs for the specified task.
+    """
+    return map_kwargs[task_name]
+
 map_kwargs = {
     "cola": {
         "remove_columns": ["sentence", "label", "idx"],
