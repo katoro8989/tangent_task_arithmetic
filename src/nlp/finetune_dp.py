@@ -138,9 +138,7 @@ def finetune(rank, args, group):
             loss.backward()
 
             if (i + 1) % args.num_grad_accumulation == 0:
-                scheduler(step)
-
-                torch.nn.utils.clip_grad_norm_(params, 1.0)
+                scheduler(iter)
                 optimizer.step()
                 iter += 1
                 optimizer.zero_grad()
@@ -193,20 +191,21 @@ def finetune(rank, args, group):
                 loss_ave = sum(losses) / len(losses)
                 accuracy = accuracy_score(all_labels, all_preds)
                 mcc = matthews_corrcoef(all_labels, all_preds)
-                percent_complete = 100 * i / len(ddp_train_loader)
+                percent_complete = iter / max_steps
 
                 print(
-                    f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(ddp_train_loader)}]\t"  # noqa: E501
+                    f"Train Step: {iter} [{percent_complete:.0f}% {iter}/{max_steps}]\t"  # noqa: E501
                     f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
-                    'step': step,
+                    'step': iter,
                     'val_loss': loss_ave,
                     'val_accuracy': accuracy,
                     'val_mcc': mcc,
+                    'lr': optimizer.param_groups[0]['lr'],
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
             if  iter - 1 >= max_steps:
