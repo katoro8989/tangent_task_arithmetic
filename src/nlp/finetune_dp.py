@@ -191,10 +191,10 @@ def finetune(rank, args, group):
                 loss_ave = sum(losses) / len(losses)
                 accuracy = accuracy_score(all_labels, all_preds)
                 mcc = matthews_corrcoef(all_labels, all_preds)
-                percent_complete = iter / max_steps
+                percent_complete = (iter / max_steps) * 100
 
                 print(
-                    f"Train Step: {iter - 1} [{percent_complete:.0f}% {iter}/{max_steps}]\t"  # noqa: E501
+                    f"Train Step: {iter - 1} [{percent_complete:.0f}% {iter - 1}/{max_steps}]\t"  # noqa: E501
                     f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
@@ -279,7 +279,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--max_steps', type=int, default=1000)
+    parser.add_argument('--max_steps', type=int, default=1)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)

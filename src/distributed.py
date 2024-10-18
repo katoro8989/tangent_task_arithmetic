@@ -13,8 +13,13 @@ def setup_ddp(rank, world_size, port=12357):
         rank=rank,
         world_size=world_size,
     )
-    torch.cuda.set_device(rank)
+    if torch.cuda.is_available():
+        torch.cuda.set_device(rank)
+    else:
+        print(f"Warning: CUDA is not available for rank {rank}")
+    
     torch.distributed.barrier()
+    print(f"Process {rank} has successfully initialized DDP")
 
 
 def cleanup_ddp():
