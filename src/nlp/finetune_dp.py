@@ -217,6 +217,44 @@ def finetune(rank, args, group):
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
 
+    # evaluate on test set
+    print("Evaluating on test set")
+    ddp_model.eval()
+    all_preds = []
+    all_labels = []
+    losses = []
+    with torch.no_grad():
+        for batch in eval_dataloader:
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+
+            outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            logits = outputs
+
+            losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
+            preds = torch.argmax(logits, dim=-1)
+
+            mask = labels != -100
+            preds_valid = preds[mask]
+            labels_valid = labels[mask]
+
+            all_preds.extend(preds_valid.cpu().numpy())
+            all_labels.extend(labels_valid.cpu().numpy())
+
+    # sklearn の accuracy_score を使って精度を計算
+    loss_ave = sum(losses) / len(losses)
+    accuracy = accuracy_score(all_labels, all_preds)
+    mcc = matthews_corrcoef(all_labels, all_preds)
+    percent_complete = 100 * i / len(ddp_train_loader)
+
+    print(
+        f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        flush=True,
+    )
+
     if args.save is not None and is_main_process():
         zs_path = (
             os.path.join(ckpdir, "linear_zeroshot")
@@ -231,44 +269,6 @@ def finetune(rank, args, group):
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
     
-    if is_main_process():
-        # evaluate on test set
-        print("Evaluating on test set")
-        ddp_model.eval()
-        all_preds = []
-        all_labels = []
-        losses = []
-        with torch.no_grad():
-            for batch in eval_dataloader:
-                input_ids = batch['input_ids'].to(device)
-                attention_mask = batch['attention_mask'].to(device)
-                labels = batch['labels'].to(device)
-
-                outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                logits = outputs
-
-                losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
-                preds = torch.argmax(logits, dim=-1)
-
-                mask = labels != -100
-                preds_valid = preds[mask]
-                labels_valid = labels[mask]
-
-                all_preds.extend(preds_valid.cpu().numpy())
-                all_labels.extend(labels_valid.cpu().numpy())
-
-        # sklearn の accuracy_score を使って精度を計算
-        loss_ave = sum(losses) / len(losses)
-        accuracy = accuracy_score(all_labels, all_preds)
-        mcc = matthews_corrcoef(all_labels, all_preds)
-        percent_complete = 100 * i / len(ddp_train_loader)
-
-        print(
-            f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-            f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-            f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-            flush=True,
-        )
 
     cleanup_ddp()
 
