@@ -48,7 +48,11 @@ def finetune(rank, args, group):
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
-    dataset_class = load_dataset("glue", args.task)
+    if args.task == "mnli":
+        task_dataset_name = "mnli_matched"
+    else:
+        task_dataset_name = args.task
+    dataset_class = load_dataset("glue", task_dataset_name)
     
     preprocessor_class = get_preprocessor(args.task)
     preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
@@ -159,7 +163,7 @@ def finetune(rank, args, group):
                 ddp_model.module.model.save_pretrained(model_path)
 
             if (
-                iter % print_every == 0
+                iter - 1 % print_every == 0
                 and ((i + 1) % args.num_grad_accumulation == 0)
                 and is_main_process()
             ):
