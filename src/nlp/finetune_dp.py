@@ -205,7 +205,7 @@ def finetune(rank, args, group):
                 )
                 run.log({
                     'step': step,
-                    'val_loss': loss_ave.item(),
+                    'val_loss': loss_ave,
                     'val_accuracy': accuracy,
                     'val_mcc': mcc,
                 })
