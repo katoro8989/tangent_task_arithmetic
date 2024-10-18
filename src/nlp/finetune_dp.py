@@ -12,7 +12,7 @@ import uuid
 from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
-from dataset_preprocess.glue_process import *
+from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from linearize import LinearizedModelWraper, SimpleCallableT5Model
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
