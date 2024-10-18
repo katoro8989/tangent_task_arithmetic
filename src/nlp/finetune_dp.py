@@ -71,7 +71,6 @@ def finetune(rank, args, group):
     
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
-    test_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
     
     # Distribute the data and model across the GPUs.
@@ -210,12 +209,12 @@ def finetune(rank, args, group):
                     'val_mcc': mcc,
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
-            if  iter >= max_steps:
+            if  iter - 1 >= max_steps:
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
         # 外側のループで最大ステップ数に達しているか確認
-        if iter >= max_steps:
+        if iter - 1 >= max_steps:
             print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
 
@@ -233,42 +232,43 @@ def finetune(rank, args, group):
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
     
-    # evaluate on test set
-    ddp_model.eval()
-    all_preds = []
-    all_labels = []
-    losses = []
-    with torch.no_grad():
-        for batch in test_dataloader:
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            labels = batch['labels'].to(device)
+    if is_main_process():
+        # evaluate on test set
+        ddp_model.eval()
+        all_preds = []
+        all_labels = []
+        losses = []
+        with torch.no_grad():
+            for batch in eval_dataloader:
+                input_ids = batch['input_ids'].to(device)
+                attention_mask = batch['attention_mask'].to(device)
+                labels = batch['labels'].to(device)
 
-            outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            logits = outputs
+                outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+                logits = outputs
 
-            losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
-            preds = torch.argmax(logits, dim=-1)
+                losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
+                preds = torch.argmax(logits, dim=-1)
 
-            mask = labels != -100
-            preds_valid = preds[mask]
-            labels_valid = labels[mask]
+                mask = labels != -100
+                preds_valid = preds[mask]
+                labels_valid = labels[mask]
 
-            all_preds.extend(preds_valid.cpu().numpy())
-            all_labels.extend(labels_valid.cpu().numpy())
+                all_preds.extend(preds_valid.cpu().numpy())
+                all_labels.extend(labels_valid.cpu().numpy())
 
-    # sklearn の accuracy_score を使って精度を計算
-    loss_ave = sum(losses) / len(losses)
-    accuracy = accuracy_score(all_labels, all_preds)
-    mcc = matthews_corrcoef(all_labels, all_preds)
-    percent_complete = 100 * i / len(ddp_train_loader)
+        # sklearn の accuracy_score を使って精度を計算
+        loss_ave = sum(losses) / len(losses)
+        accuracy = accuracy_score(all_labels, all_preds)
+        mcc = matthews_corrcoef(all_labels, all_preds)
+        percent_complete = 100 * i / len(ddp_train_loader)
 
-    print(
-        f"Test Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        f"Test Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        f"Test MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        flush=True,
-    )
+        print(
+            f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            flush=True,
+        )
 
     cleanup_ddp()
 
@@ -279,13 +279,13 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--max_steps', type=int, default=500)
+    parser.add_argument('--max_steps', type=int, default=2000)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)
     parser.add_argument('--eval_batch_size', type=int, default=8)
     parser.add_argument('--warmup_length', type=int, default=0)
-    parser.add_argument('--wd', type=int, default=0.01)
+    parser.add_argument('--wd', type=int, default=0.)
     parser.add_argument('--fp16', action='store_true', help='whether fp16')
     parser.add_argument('--logging_dir', type=int, default=None)
     parser.add_argument('--logging_strategy', type=str, default="steps")
