@@ -163,7 +163,7 @@ def finetune(rank, args, group):
                 ddp_model.module.model.save_pretrained(model_path)
 
             if (
-                iter - 1 % print_every == 0
+                (iter - 1) % print_every == 0
                 and ((i + 1) % args.num_grad_accumulation == 0)
                 and is_main_process()
             ):
