@@ -3,50 +3,22 @@ import sys
 import time
 import torch
 import numpy as np
-from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer
-from datasets import load_dataset, load_metric
-from dataset_preprocess.glue_process import *
+from transformers import T5ForConditionalGeneration, T5Tokenizer
+from datasets import load_dataset
 import argparse
 import datetime
 import wandb
-import evaluate
 import uuid
-from torch.utils.data import DataLoader, default_collate
+from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
+from dataset_preprocess.glue_process import *
+from linearize import LinearizedModelWraper, SimpleCallableT5Model
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.utils import cosine_lr
 
-
-
-
-from linearize import LinearizedModelWraper, SimpleCallableT5Model
-
-preprocessor_mapping = {
-    "cola": CoLA_Preprocessor,
-    "rte": RTE_Preprocessor,
-    "mnli": MNLI_Preprocessor,
-    "mrpc": MRPC_Preprocessor,
-    "qnli": QNLI_Preprocessor,
-    "qqp": QQP_Preprocessor,
-    "sst2": SST2_Preprocessor,
-    "stsb": STSB_Preprocessor,
-}
-
-tokenizer_kwargs = {
-  "padding": "max_length",
-  "truncation": True,
-  "return_tensors": "pt",
-}
-
-map_kwargs = {
-    "remove_columns": ["sentence", "label", "idx"],
-    "batched": True,
-    "num_proc": 1,
-    "desc": "Running tokenizer on dataset"
-}
 
 def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
@@ -63,11 +35,6 @@ def finetune(rank, args, group):
                         name=f"process_{rank}",
                         group=group, 
                         )
-    
-    run_id = f'{args.model}'
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_id = f'{run_id}_{timestamp}'
-    output_dir = os.path.join(args.output_dir, run_id)
 
     
     hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
@@ -83,8 +50,9 @@ def finetune(rank, args, group):
 
     dataset_class = load_dataset("glue", args.task)
     
-    preprocessor_class = preprocessor_mapping[args.task]
-    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=tokenizer_kwargs)
+    preprocessor_class = get_preprocessor(args.task)
+    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
+    map_kwargs = get_map_kwargs(args.task)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
 
     # DataLoaderの作成
@@ -103,6 +71,7 @@ def finetune(rank, args, group):
     
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
+    test_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
     
     # Distribute the data and model across the GPUs.
@@ -259,6 +228,29 @@ def finetune(rank, args, group):
         )
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
+    
+    # evaluate on test set
+    ddp_model.eval()
+    all_preds = []
+    all_labels = []
+    with torch.no_grad():
+        for batch in test_dataloader:
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+
+            outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+            logits = outputs
+
+            preds = torch.argmax(logits, dim=-1)
+
+            mask = labels != -100
+            preds_valid = preds[mask]
+            labels_valid = labels[mask]
+
+            all_preds.extend(preds_valid.cpu().numpy())
+            all_labels.extend(labels_valid.cpu().numpy())
+    
 
     cleanup_ddp()
 
@@ -295,6 +287,12 @@ if __name__ == '__main__':
     args.world_size = 4
     args.port = 12345
     args.seed = 42
+
+    args.tokenizer_kwargs = {
+    "padding": "max_length",
+    "truncation": True,
+    "return_tensors": "pt",
+    }
 
     if args.seed is not None:
         args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"

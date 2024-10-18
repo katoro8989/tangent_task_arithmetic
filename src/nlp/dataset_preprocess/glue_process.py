@@ -1,5 +1,55 @@
 from .base_process import DatasetPreprocessor, preprocess
 
+map_kwargs = {
+    "cola": {
+        "remove_columns": ["sentence", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    }, 
+    "mnli": {
+        "remove_columns": ["idx", "hypothesis", "premise", "label"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "mrpc": {
+        "remove_columns": ["sentence1", "sentence2", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "qnli": {
+        "remove_columns": ["question", "sentence", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "qqp": {
+        "remove_columns": ["question1", "question2", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "rte": {
+        "remove_columns": ["sentence1", "sentence2", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "sst2": {
+        "remove_columns": ["sentence", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    },
+    "stsb": {
+        "remove_columns": ["sentence1", "sentence2", "label", "idx"],
+        "batched": True,
+        "num_proc": 1,
+        "desc": "Running tokenizer on dataset",
+    }
+}
 
 class CoLA_Preprocessor(DatasetPreprocessor):
     """
