@@ -209,12 +209,14 @@ def finetune(rank, args, group):
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
             if  iter - 1 >= max_steps:
-                print(f"Reached maximum steps of {max_steps}. Ending training.")
+                if is_main_process():
+                    print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break  # 内側のループを終了
 
         # 外側のループで最大ステップ数に達しているか確認
         if iter - 1 >= max_steps:
-            print(f"Reached maximum steps of {max_steps}. Ending training.")
+            if is_main_process():
+                print(f"Reached maximum steps of {max_steps}. Ending training.")
             break  # 外側のループを終了
 
     # evaluate on test set
@@ -248,12 +250,13 @@ def finetune(rank, args, group):
     mcc = matthews_corrcoef(all_labels, all_preds)
     percent_complete = 100 * i / len(ddp_train_loader)
 
-    print(
-        f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-        flush=True,
-    )
+    if is_main_process():
+        print(
+            f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+            flush=True,
+        )
 
     if args.save is not None and is_main_process():
         zs_path = (
@@ -279,7 +282,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="google/flan-t5-small")
     parser.add_argument('--output_dir', type=str)
     parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--max_steps', type=int, default=1)
+    parser.add_argument('--max_steps', type=int, default=2000)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)
