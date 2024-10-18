@@ -169,6 +169,7 @@ def finetune(rank, args, group):
                 ddp_model.eval()
                 all_preds = []
                 all_labels = []
+                losses = []
                 with torch.no_grad():
                     for batch in ddp_eval_loader:
                         input_ids = batch['input_ids'].to(device)
@@ -177,6 +178,8 @@ def finetune(rank, args, group):
 
                         outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
                         logits = outputs
+
+                        losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
 
                         preds = torch.argmax(logits, dim=-1)
 
@@ -188,20 +191,21 @@ def finetune(rank, args, group):
                         all_labels.extend(labels_valid.cpu().numpy())
 
                 # sklearn の accuracy_score を使って精度を計算
+                loss_ave = sum(losses) / len(losses)
                 accuracy = accuracy_score(all_labels, all_preds)
                 mcc = matthews_corrcoef(all_labels, all_preds)
                 percent_complete = 100 * i / len(ddp_train_loader)
 
                 print(
                     f"Train Epoch: {epoch} [{percent_complete:.0f}% {i}/{len(ddp_train_loader)}]\t"  # noqa: E501
-                    f"Val Loss: {loss.item():.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+                    f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     f"Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
                     'step': step,
-                    'val_loss': loss.item(),
+                    'val_loss': loss_ave.item(),
                     'val_accuracy': accuracy,
                     'val_mcc': mcc,
                 })
@@ -233,6 +237,7 @@ def finetune(rank, args, group):
     ddp_model.eval()
     all_preds = []
     all_labels = []
+    losses = []
     with torch.no_grad():
         for batch in test_dataloader:
             input_ids = batch['input_ids'].to(device)
@@ -242,6 +247,7 @@ def finetune(rank, args, group):
             outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             logits = outputs
 
+            losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
             preds = torch.argmax(logits, dim=-1)
 
             mask = labels != -100
@@ -250,7 +256,19 @@ def finetune(rank, args, group):
 
             all_preds.extend(preds_valid.cpu().numpy())
             all_labels.extend(labels_valid.cpu().numpy())
-    
+
+    # sklearn の accuracy_score を使って精度を計算
+    loss_ave = sum(losses) / len(losses)
+    accuracy = accuracy_score(all_labels, all_preds)
+    mcc = matthews_corrcoef(all_labels, all_preds)
+    percent_complete = 100 * i / len(ddp_train_loader)
+
+    print(
+        f"Test Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        f"Test Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        f"Test MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
+        flush=True,
+    )
 
     cleanup_ddp()
 
