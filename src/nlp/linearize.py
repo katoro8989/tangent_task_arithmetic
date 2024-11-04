@@ -77,7 +77,7 @@ def dict_params_to_tuple(dict_params: dict):
     return tuple(v for k, v in dict_params.items())
 
 
-class LinearizedModelWraper(nn.Module):
+class LinearizedModelWrapper(nn.Module):
     def __init__(self, model: T5ForConditionalGeneration, init_model: T5ForConditionalGeneration = None):
         """
         Initializes a linearized model.

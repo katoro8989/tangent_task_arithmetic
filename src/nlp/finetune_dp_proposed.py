@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
-from linearize import LinearizedModelWrapper, SimpleCallableT5Model
+from linearize import LinearizedModelWraper, SimpleCallableT5Model
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
@@ -42,7 +42,7 @@ def finetune(rank, args, group):
 
     if args.ft_method == "linear":
         linearized_finetuning = True
-        model = LinearizedModelWrapper(model)
+        model = LinearizedModelWraper(model)
     else:
         linearized_finetuning = False
     
@@ -182,33 +182,17 @@ def finetune(rank, args, group):
 
                         losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
 
-                        # preds = torch.argmax(logits, dim=-1)
-
-                        # mask = labels != -100
-                        # preds_valid = preds[mask]
-                        # labels_valid = labels[mask]
-
-                        # all_preds.extend(preds_valid.cpu().numpy())
-                        # all_labels.extend(labels_valid.cpu().numpy())
-
-                # sklearn の accuracy_score を使って精度を計算
                 loss_ave = sum(losses) / len(losses)
-                # accuracy = accuracy_score(all_labels, all_preds)
-                # mcc = matthews_corrcoef(all_labels, all_preds)
                 percent_complete = (iter / max_steps) * 100
 
                 print(
                     f"Train Step: {iter - 1} [{percent_complete:.0f}% {iter - 1}/{max_steps}]\t"  # noqa: E501
                     f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-                    # f"Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-                    # f"Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
                     'step': iter - 1,
                     'val_loss': loss_ave,
-                    # 'val_accuracy': accuracy,
-                    # 'val_mcc': mcc,
                     'lr': optimizer.param_groups[0]['lr'],
                 })
             # optimizer.step() を行った後に最大ステップ数に達しているか確認
