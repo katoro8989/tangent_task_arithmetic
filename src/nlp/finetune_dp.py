@@ -129,6 +129,7 @@ def finetune(rank, args, group):
                 i // args.num_grad_accumulation
                 + epoch * num_batches // args.num_grad_accumulation
             )
+            print("prepare data")
 
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
