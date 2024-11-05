@@ -1,7 +1,8 @@
 import numpy as np
 import torch
 import tqdm
-from sklearn.metrics import accuracy_score, matthews_corrcoef, f1_score, pearsonr, spearmanr
+from sklearn.metrics import accuracy_score, matthews_corrcoef, f1_score
+from scipy.stats import pearsonr, spearmanr
 
 
 from src import utils
