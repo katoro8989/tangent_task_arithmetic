@@ -2,10 +2,10 @@ import json
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 from datasets import load_dataset
 
-from src.args import parse_arguments
-from src.eval import eval_single_dataset
-from src.linearize import LinearizedModelWrapper
-from src.task_vectors import LinearizedTaskVector, NonLinearTaskVector
+import argparse
+from eval import eval_single_dataset
+from linearize import LinearizedModelWrapper
+from task_vectors import LinearizedTaskVector, NonLinearTaskVector
 
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
