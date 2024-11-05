@@ -30,6 +30,10 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
 
             preds = torch.argmax(logits, dim=-1)
 
+            mask = labels != -100
+            preds = preds[mask]
+            labels = labels[mask]
+
             predictions = tokenizer.batch_decode(preds, skip_special_tokens=True)
             labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
