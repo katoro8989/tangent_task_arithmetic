@@ -49,15 +49,15 @@ for dataset in [
     args.task = dataset
 
     pretrained_checkpoint = (
-        f"{args.save}/{dataset}/linear_zeroshot.pt"
+        f"{args.save}/{dataset}/linear_zeroshot"
         if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-        else f"{args.save}/{dataset}/zeroshot.pt"
+        else f"{args.save}/{dataset}/zeroshot"
     )
 
     finetuned_checkpoint = (
-        f"{args.save}/{dataset}/linear_finetuned.pt"
+        f"{args.save}/{dataset}/linear_finetuned"
         if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-        else f"{args.save}/{dataset}/finetuned.pt"
+        else f"{args.save}/{dataset}/finetuned"
     )
 
     try:
