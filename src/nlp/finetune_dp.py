@@ -118,6 +118,7 @@ def finetune(rank, args, group):
     max_steps = args.max_steps
     iter = 0
 
+    print("Starting training.")
     for epoch in range(args.epochs):
         ddp_model.train()
 
@@ -133,6 +134,8 @@ def finetune(rank, args, group):
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
             data_time = time.time() - start_time
+
+            print("predicting")
 
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
