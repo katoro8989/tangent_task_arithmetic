@@ -87,7 +87,7 @@ def finetune(rank, args, group):
     ddp_model = torch.nn.parallel.DistributedDataParallel(
         model,
         device_ids=[rank],
-        find_unused_parameters=True,
+        # find_unused_parameters=True,
         output_device=rank,
     )
 
