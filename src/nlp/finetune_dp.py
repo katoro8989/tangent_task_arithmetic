@@ -20,18 +20,18 @@ from src.distributed import cleanup_ddp, distribute_loader, is_main_process, set
 from src.utils import cosine_lr
 
 # カスタム collate_fn の定義
-    def collate_fn(batch):
-        # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
-        input_ids = torch.tensor([item['input_ids'] for item in batch])
-        attention_mask = torch.tensor([item['attention_mask'] for item in batch])
-        labels = torch.tensor([item['labels'] for item in batch])
-        
-        return {
-            'input_ids': input_ids,
-            'attention_mask': attention_mask,
-            'labels': labels
-        }
-        
+def collate_fn(batch):
+    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }
+
 def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
