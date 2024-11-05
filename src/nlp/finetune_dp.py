@@ -30,7 +30,7 @@ def finetune(rank, args, group):
         model_name = args.model.split("/")[-1]
 
     run = wandb.init(config=vars(args),
-                        project=f"{model_name}_GLUE_{train_dataset}_{args.ft_method}",
+                        project=f"{model_name}_GLUE_{train_dataset}_{args.finetuning_mode}",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -40,7 +40,7 @@ def finetune(rank, args, group):
     hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
     model = simple_model_class = SimpleCallableT5Model(hf_t5_model)
 
-    if args.ft_method == "linear":
+    if args.finetuning_mode == "linear":
         linearized_finetuning = True
         model = LinearizedModelWrapper(model)
     else:
@@ -304,7 +304,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_accumulation_steps', type=int, default=10)
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--auto_find_batch_size', action='store_true')
-    parser.add_argument('--ft_method', type=str, default="standard")
+    parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
     args = parser.parse_args()
 
