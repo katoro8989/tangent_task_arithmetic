@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
     # HACK: Some command line arguments are overwritten by defaults here.
     args.world_size = 4
-    args.port = 12346
+    args.port = 12345
     args.seed = 42
 
     args.tokenizer_kwargs = {
