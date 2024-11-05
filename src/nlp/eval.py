@@ -18,7 +18,7 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
     all_preds = []
     all_labels = []
     with torch.no_grad():
-        for batch in eval_dataloader:
+        for batch in tqdm(eval_dataloader, desc="Evaluating"):
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
