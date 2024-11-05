@@ -135,7 +135,7 @@ class NonLinearTaskVector(_TaskVector):
 
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
-        hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
         return SimpleCallableT5Model(hf_t5_model)
 
     def apply_to_nonlinear(self, pretrained_nonlinear_checkpoint, scaling_coef=1.0):
@@ -157,7 +157,7 @@ class LinearizedTaskVector(_TaskVector):
 
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
-        hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
         return LinearizedModelWrapper(SimpleCallableT5Model(hf_t5_model))
 
     def apply_to_nonlinear(
