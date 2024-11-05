@@ -37,8 +37,9 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
             predictions = tokenizer.batch_decode(preds, skip_special_tokens=True)
             labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
 
-            all_preds.extend(predictions.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            # Convert decoded predictions and labels to numpy arrays
+            all_preds.extend(predictions)
+            all_labels.extend(labels)
 
     if args.task == "cola":
         result = matthews_corrcoef(all_labels, all_preds)
