@@ -135,6 +135,7 @@ def finetune(rank, args, group):
             labels = batch['labels'].to(device)
             data_time = time.time() - start_time
 
+            print("predicting")
 
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
