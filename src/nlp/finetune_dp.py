@@ -73,8 +73,8 @@ def finetune(rank, args, group):
         train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
         eval_dataloader = DataLoader(encoded_dataset["validation_matched"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
     else:
-        train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn, num_workers=4)
-        eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn, num_workers=4)
+        train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn, num_workers=0)
+        eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn, num_workers=0)
 
     
     # Distribute the data and model across the GPUs.
@@ -121,7 +121,6 @@ def finetune(rank, args, group):
     print("Starting training.")
     for epoch in range(args.epochs):
         ddp_model.train()
-        print("batching")
         for i, batch in enumerate(ddp_train_loader):
             start_time = time.time()
 
@@ -136,7 +135,6 @@ def finetune(rank, args, group):
             labels = batch['labels'].to(device)
             data_time = time.time() - start_time
 
-            print("predicting")
 
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
