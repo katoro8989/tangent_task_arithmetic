@@ -16,6 +16,13 @@ parser.add_argument('--eval_batch_size', type=int, default=8)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
 parser.add_argument('--seed', type=int, default=42)
 args = parser.parse_args()
+
+args.tokenizer_kwargs = {
+    "padding": "max_length",
+    "truncation": True,
+    "return_tensors": "pt",
+    }
+    
 if args.seed is not None:
     args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
 else:
