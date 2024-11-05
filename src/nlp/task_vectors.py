@@ -2,7 +2,7 @@ import abc
 
 import torch
 
-from linearize import LinearizedModelWrapper
+from linearize import LinearizedModelWrapper, SimpleCallableT5Model
 
 
 class _TaskVector(abc.ABC):
@@ -134,7 +134,8 @@ class NonLinearTaskVector(_TaskVector):
 
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
-        return torch.load(checkpoint, map_location="cpu")
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
+        return SimpleCallableT5Model(hf_t5_model)
 
     def apply_to_nonlinear(self, pretrained_nonlinear_checkpoint, scaling_coef=1.0):
         """Apply a task vector to a nonlinear pretrained model."""
@@ -155,7 +156,8 @@ class LinearizedTaskVector(_TaskVector):
 
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
-        return LinearizedModelWrapper.load(checkpoint)
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
+        return LinearizedModelWrapper(SimpleCallableT5Model(hf_t5_model))
 
     def apply_to_nonlinear(
         self, pretrained_nonlinear_checkpoint, param_names, scaling_coef=1.0
