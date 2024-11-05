@@ -2,6 +2,7 @@ import abc
 
 import torch
 
+from transformers import T5ForConditionalGeneration
 from linearize import LinearizedModelWrapper, SimpleCallableT5Model
 
 
