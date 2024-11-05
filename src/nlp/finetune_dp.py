@@ -123,6 +123,7 @@ def finetune(rank, args, group):
         ddp_model.train()
 
         for i, batch in enumerate(ddp_train_loader):
+            torch.distributed.barrier()
             start_time = time.time()
 
             step = (
@@ -134,6 +135,7 @@ def finetune(rank, args, group):
             input_ids = batch['input_ids'].to(device)
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['labels'].to(device)
+            torch.cuda.synchronize()
             data_time = time.time() - start_time
 
             print("predicting")
