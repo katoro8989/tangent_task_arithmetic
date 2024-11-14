@@ -45,7 +45,7 @@ def finetune(rank, args, group):
         model_name = args.model.split("/")[-1]
 
     run = wandb.init(config=vars(args),
-                        project=f"{model_name}_GLUE_{train_dataset}_{args.finetuning_mode}",
+                        project=f"{model_name}_GLUE_{train_dataset}_{args.finetuning_mode}_ours",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -311,9 +311,9 @@ if __name__ == '__main__':
     args.other_tasks = [task for task in TASKS if task != args.task]
 
     if args.seed is not None:
-        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
     else:
-        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
 
     print("=" * 100)
     print(f"Finetuning {args.model} on {args.task}")
