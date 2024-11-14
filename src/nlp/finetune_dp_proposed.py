@@ -140,7 +140,7 @@ def finetune(rank, args, group):
 
     print_every = 100
     max_steps = args.max_steps
-    iter = 0
+    iter_step = 0
     len_orth = len(ddp_train_loader_to_orth)
     penalty_coef = args.penalty
 
@@ -166,13 +166,13 @@ def finetune(rank, args, group):
             loss = loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
 
             penalty = torch.tensor(0)
-            if iter > args.penalty_iter:
-                ddp_loader_to_orth = ddp_train_loader_to_orth[iter % len_orth]
+            if iter_step > args.penalty_iter:
+                ddp_loader_to_orth = ddp_train_loader_to_orth[iter_step % len_orth]
                 try:
                     batch_to_orth = next(ddp_loader_to_orth)
                 except StopIteration:
-                    ddp_train_loader_to_orth[iter % len_orth] = iter(ddp_train_loader_to_orth[iter % len_orth])
-                    ddp_loader_to_orth = ddp_train_loader_to_orth[iter % len_orth]
+                    ddp_train_loader_to_orth[iter_step % len_orth] = iter(ddp_train_loader_to_orth[iter_step % len_orth])
+                    ddp_loader_to_orth = ddp_train_loader_to_orth[iter_step % len_orth]
                     batch_to_orth = next(ddp_loader_to_orth)
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
@@ -186,9 +186,9 @@ def finetune(rank, args, group):
             loss.backward()
 
             if (i + 1) % args.num_grad_accumulation == 0:
-                scheduler(iter)
+                scheduler(iter_step)
                 optimizer.step()
-                iter += 1
+                iter_step += 1
                 optimizer.zero_grad()
 
             batch_time = time.time() - start_time
@@ -207,7 +207,7 @@ def finetune(rank, args, group):
                 ddp_model.module.model.save_pretrained(model_path)
 
             if (
-                (iter - 1) % print_every == 0
+                (iter_step - 1) % print_every == 0
                 and ((i + 1) % args.num_grad_accumulation == 0)
                 and is_main_process()
             ):
@@ -228,24 +228,24 @@ def finetune(rank, args, group):
 
 
                 loss_ave = sum(losses) / len(losses)
-                percent_complete = (iter / max_steps) * 100
+                percent_complete = (iter_step / max_steps) * 100
 
                 print(
-                    f"Train Step: {iter - 1} [{percent_complete:.0f}% {iter - 1}/{max_steps}]\t"  # noqa: E501
+                    f"Train Step: {iter_step - 1} [{percent_complete:.0f}% {iter_step - 1}/{max_steps}]\t"  # noqa: E501
                     f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
                 run.log({
-                    'step': iter - 1,
+                    'step': iter_step - 1,
                     'val_loss': loss_ave,
                     'lr': optimizer.param_groups[0]['lr'],
                 })
-            if  iter - 1 >= max_steps:
+            if  iter_step - 1 >= max_steps:
                 if is_main_process():
                     print(f"Reached maximum steps of {max_steps}. Ending training.")
                 break
 
-        if iter - 1 >= max_steps:
+        if iter_step - 1 >= max_steps:
             if is_main_process():
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
             break
