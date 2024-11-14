@@ -63,26 +63,11 @@ def finetune(rank, args, group):
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
-    dataset_class = load_dataset("glue", args.task)
-
-    dataset_class_to_orth = []
-    for task in args.other_tasks:
-        dataset_class_to_orth.append(load_dataset("glue", task))
-    
-    
-    preprocessor_class = get_preprocessor(args.task)
-    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
-    map_kwargs = get_map_kwargs(args.task)
-    encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
+    encoded_dataset = load_from_disk(f"/mnt2/dataset/glue_split/{train_dataset}")
 
     encoded_dataset_to_orth = []
-    for task_to_orth, dataset_class_to_orth in zip(args.other_tasks, dataset_class_to_orth):
-        preprocessor_class_to_orth = get_preprocessor(task_to_orth)
-        preprocessor_to_orth = preprocessor_class_to_orth(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
-        map_kwargs_to_orth = get_map_kwargs(task_to_orth)
-        encoded_dataset_to_orth.append(dataset_class_to_orth.map(preprocessor_to_orth, **map_kwargs_to_orth))
-
-    # DataLoaderの作成
+    for task in args.other_tasks:
+        encoded_dataset_to_orth.append(load_from_disk(f"/mnt2/dataset/glue_split/{task}"))
     
     if args.task == "mnli":
         train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
@@ -310,19 +295,22 @@ if __name__ == '__main__':
     "return_tensors": "pt",
     }
 
-    #other tasks are the tasks in the TASK ecept the current task
-    args.other_tasks = [task for task in TASKS if task != args.task]
+    for task in TASKS:
+        args.task = task
 
-    if args.seed is not None:
-        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
-    else:
-        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
+        #other tasks are the tasks in the TASK ecept the current task
+        args.other_tasks = [task for task in TASKS if task != args.task]
 
-    print("=" * 100)
-    print(f"Finetuning {args.model} on {args.task}")
-    print("=" * 100)
+        if args.seed is not None:
+            args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
+        else:
+            args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
 
-    group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
+        print("=" * 100)
+        print(f"Finetuning {args.model} on {args.task}")
+        print("=" * 100)
 
-    torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
+        group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
+
+        torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
                 

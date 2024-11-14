@@ -11,6 +11,9 @@ from task_vectors import LinearizedTaskVector, NonLinearTaskVector
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from torch.utils.data import DataLoader
 
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from src.utils import find_optimal_coef
+
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="google/flan-t5-small")
@@ -33,16 +36,52 @@ else:
 
 accuracies = {}
 
+TASKS = ["cola", "sst2", "mrpc", "rte"]
 
 print("*" * 100)
-if args.finetuning_mode == "none":
-    print("Evaluating pretrained models.")
-elif args.finetuning_mode == "standard":
+if args.finetuning_mode == "standard":
     print("Evaluating non-linear FT models.")
+    ft_accuracies_path = os.path.join(args.save, "ft_accuracies.json")
 elif args.finetuning_mode == "linear":
     print("Evaluating linear FT models.")
+    ft_accuracies_path = os.path.join(args.save, "linear_ft_accuracies.json")
 elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
+    ft_accuracies_path = os.path.join(args.save, "posthoc_ft_accuracies.json")
+else:
+    raise ValueError(f"Invalid finetuning mode: {args.finetuning_mode}")
+print("*" * 100)
+
+with open(ft_accuracies_path) as f:
+    args.finetuning_accuracies = json.load(f)
+
+with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
+    pretrained_accuracies = json.load(f)
+
+eval_datasets = [
+    "cola",
+    "mrpc",
+    "rte",
+    "sst2",
+]
+
+task_vectors = []
+
+for dataset in eval_datasets:
+    if args.finetuning_mode == "linear":
+        pretrained_checkpoint = f"{args.save}/{dataset}/linear_zeroshot"
+        finetuned_checkpoint = f"{args.save}/{dataset}/linear_finetuned"
+        task_vectors.append(
+            LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+        )
+    else:
+        pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
+        finetuned_checkpoint = f"{args.save}/{dataset}Val/finetuned.pt"
+        task_vectors.append(
+            NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+        )
+
+task_vector = sum(task_vectors)
 
 for dataset in [
     "cola",
