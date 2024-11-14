@@ -5,6 +5,10 @@ import random
 import os
 
 TASKS = ["cola", "mrpc", "rte", "sst2"]
+
+model = "google/flan-t5-small"
+tokenizer = T5Tokenizer.from_pretrained(model)
+
 for task in TASKS:
     dataset_class = load_dataset("glue", task)
         
@@ -35,3 +39,15 @@ for task in TASKS:
 
     split_datasets.save_to_disk(output_dir)
     print(f"Dataset {task} saved to {output_dir}")
+
+def collate_fn(batch):
+    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }
