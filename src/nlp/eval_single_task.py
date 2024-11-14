@@ -117,6 +117,7 @@ for dataset in [
         accuracies[eval_dataset] = eval_single_dataset(
             model, tokenizer, eval_dataloader, args
         )["top1"]
+        model = model.to("cpu")
 
 
 # Save results
