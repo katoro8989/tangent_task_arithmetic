@@ -93,7 +93,7 @@ def finetune(rank, args, group):
     
     train_dataloader_to_orth = []
     for encoded_dataset_to_orth_ in encoded_dataset_to_orth:
-        train_dataloader_to_orth.append(DataLoader(encoded_dataset_to_orth_["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn))
+        train_dataloader_to_orth.append(DataLoader(encoded_dataset_to_orth_["train"], batch_size=args.orth_batch_size, shuffle=True, collate_fn=collate_fn))
 
     
     # Distribute the data and model across the GPUs.
@@ -296,6 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_every', type=int, default=-1)
     parser.add_argument('--penalty', type=float, default=0.1)
     parser.add_argument('--penalty_iter', type=int, default=-1)
+    parser.add_argument('--orth_batch_size', type=int, default=8)
     args = parser.parse_args()
 
     # HACK: Some command line arguments are overwritten by defaults here.
