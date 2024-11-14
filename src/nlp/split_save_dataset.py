@@ -5,8 +5,8 @@ from torch.utils.data import DataLoader, Subset
 import random
 import os
 
-output_dir = "/mnt2/dataset/glue_split"
-os.makedirs(output_dir, exist_ok=True)
+base_output_dir = "/mnt2/dataset/glue_split"
+os.makedirs(base_output_dir, exist_ok=True)
 
 TASKS = ["cola", "mrpc", "rte", "sst2"]
 
@@ -39,7 +39,7 @@ for task in TASKS:
     new_validation_dataset = Subset(encoded_dataset["train"], validation_indices)
     test_dataset = encoded_dataset["validation"]
 
-    output_dir = os.path.join(output_dir, task)
+    output_dir = os.path.join(base_output_dir, task)
     os.makedirs(output_dir, exist_ok=True)
 
     split_datasets = DatasetDict({
