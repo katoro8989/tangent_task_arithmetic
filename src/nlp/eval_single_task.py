@@ -18,6 +18,7 @@ parser.add_argument('--output_dir', type=str)
 parser.add_argument('--eval_batch_size', type=int, default=8)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
 parser.add_argument('--seed', type=int, default=42)
+parser.add_argument('--device_number', type=int, default=0)
 args = parser.parse_args()
 
 args.tokenizer_kwargs = {
