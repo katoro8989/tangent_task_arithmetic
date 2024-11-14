@@ -82,6 +82,8 @@ for dataset in [
         model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
     elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear":
         model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=1.0)
+    
+    model.to("cuda")
 
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
@@ -109,7 +111,6 @@ for dataset in [
         test_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
     for split in ["validation", "test"]:
-        model.to("cuda")
         eval_dataloader = val_dataloader if split == "validation" else test_dataloader
         eval_dataset = dataset if split == "test" else f"{dataset}Val"
         # Evaluate
