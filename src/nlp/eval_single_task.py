@@ -1,6 +1,6 @@
 import json
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import torch
 
 
