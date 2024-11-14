@@ -103,7 +103,7 @@ def finetune(rank, args, group):
     for train_dataloader_to_orth_ in train_dataloader_to_orth:
         ddp_train_loader_to_orth.append(distribute_loader(train_dataloader_to_orth_))
     
-    ddp_train_loader_to_orth = [iter(loader) for loader in ddp_train_loader_to_orth]
+    ddp_train_loader_iters_to_orth = [iter(loader) for loader in ddp_train_loader_to_orth]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
@@ -167,12 +167,12 @@ def finetune(rank, args, group):
 
             penalty = torch.tensor(0)
             if iter_step > args.penalty_iter:
-                ddp_loader_to_orth = ddp_train_loader_to_orth[iter_step % len_orth]
+                ddp_loader_to_orth = ddp_train_loader_iters_to_orth[iter_step % len_orth]
                 try:
                     batch_to_orth = next(ddp_loader_to_orth)
                 except StopIteration:
-                    ddp_train_loader_to_orth[iter_step % len_orth] = iter(ddp_train_loader_to_orth[iter_step % len_orth])
-                    ddp_loader_to_orth = ddp_train_loader_to_orth[iter_step % len_orth]
+                    ddp_train_loader_iters_to_orth[iter_step % len_orth] = iter(ddp_train_loader_to_orth[iter_step % len_orth])
+                    ddp_loader_to_orth = ddp_train_loader_iters_to_orth[iter_step % len_orth]
                     batch_to_orth = next(ddp_loader_to_orth)
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     parser.add_argument('--checkpoint_every', type=int, default=-1)
     parser.add_argument('--penalty', type=float, default=0.1)
     parser.add_argument('--penalty_iter', type=int, default=-1)
-    parser.add_argument('--orth_batch_size', type=int, default=8)
+    parser.add_argument('--orth_batch_size', type=int, default=4)
     args = parser.parse_args()
 
     # HACK: Some command line arguments are overwritten by defaults here.
