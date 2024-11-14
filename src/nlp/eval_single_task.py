@@ -108,7 +108,7 @@ for dataset in [
         val_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
         test_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
-    for split in ["test", "validation"]:
+    for split in ["validation", "test"]:
         eval_dataloader = val_dataloader if split == "validation" else test_dataloader
         eval_dataset = dataset if split == "test" else f"{dataset}Val"
         # Evaluate

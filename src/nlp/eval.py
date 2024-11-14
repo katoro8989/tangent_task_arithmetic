@@ -56,6 +56,7 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
         result = accuracy_score(all_labels, all_preds)
 
     print(f"Done evaluating on {args.task}. Score: {100*result:.2f}%")
+    model.to("cpu")
 
     return {"top1": result}
 
