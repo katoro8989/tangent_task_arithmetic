@@ -43,7 +43,7 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
 
     if args.task == "cola":
         result = matthews_corrcoef(all_labels, all_preds)
-    elif args.task == "mrpc" or args.tasf == "qqp":
+    elif args.task == "mrpc" or args.task == "qqp":
         _result1 = accuracy_score(all_labels, all_preds)
         _result2 = f1_score(all_labels, all_preds, average='micro')
         result = (_result1 + _result2) / 2
