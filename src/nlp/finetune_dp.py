@@ -4,7 +4,7 @@ import time
 import torch
 import numpy as np
 from transformers import T5ForConditionalGeneration, T5Tokenizer
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 import argparse
 import datetime
 import wandb
