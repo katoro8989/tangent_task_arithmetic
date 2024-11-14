@@ -9,7 +9,7 @@ import argparse
 import datetime
 import wandb
 import uuid
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
@@ -66,6 +66,21 @@ def finetune(rank, args, group):
     preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
     map_kwargs = get_map_kwargs(args.task)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
+
+    # 現在のvalidationデータのサイズ
+    num_validation_samples = len(encoded_dataset["validation"])
+
+    # trainデータからnum_validation_samplesと同じ数のサンプルをランダムに選択
+    train_indices = list(range(len(encoded_dataset["train"])))
+    random.shuffle(train_indices)  # インデックスをシャッフル
+    validation_indices = train_indices[:num_validation_samples]  # 最初のnum_validation_samples個をvalidation用に
+    train_indices = train_indices[num_validation_samples:]  # 残りをtrain用に
+
+    # Subsetを使ってデータセットを分割
+    new_train_dataset = Subset(encoded_dataset["train"], train_indices)
+    new_validation_dataset = Subset(encoded_dataset["train"], validation_indices)
+    test_dataset = encoded_dataset["validation"]
+
 
     # DataLoaderの作成
     
