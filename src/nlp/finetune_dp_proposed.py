@@ -102,6 +102,8 @@ def finetune(rank, args, group):
     ddp_train_loader_to_orth = []
     for train_dataloader_to_orth_ in train_dataloader_to_orth:
         ddp_train_loader_to_orth.append(distribute_loader(train_dataloader_to_orth_))
+    
+    ddp_train_loader_to_orth = [iter(loader) for loader in ddp_train_loader_to_orth]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
