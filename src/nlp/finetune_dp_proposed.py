@@ -177,7 +177,7 @@ def finetune(rank, args, group):
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
                 attention_mask_to_orth = batch_to_orth['attention_mask'].to(device)
-                tau_jacob = ddp_model.dp(input_ids=inputs_to_orth, attention_mask=attention_mask_to_orth)
+                tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth, attention_mask=attention_mask_to_orth)
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()
             
