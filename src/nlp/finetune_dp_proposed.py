@@ -297,6 +297,7 @@ if __name__ == '__main__':
 
     for task in TASKS:
         args.task = task
+        args.finetuning_mode = "linear"
 
         #other tasks are the tasks in the TASK ecept the current task
         args.other_tasks = [task for task in TASKS if task != args.task]
