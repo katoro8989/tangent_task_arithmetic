@@ -10,11 +10,18 @@ TASKS = ["cola", "mrpc", "rte", "sst2"]
 model = "google/flan-t5-small"
 tokenizer = T5Tokenizer.from_pretrained(model)
 
+tokenizer_kwargs = {
+    "padding": "max_length",
+    "truncation": True,
+    "return_tensors": "pt",
+    }
+
 for task in TASKS:
+    print(f"Processing {task} dataset")
     dataset_class = load_dataset("glue", task)
         
     preprocessor_class = get_preprocessor(task)
-    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
+    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=tokenizer_kwargs)
     map_kwargs = get_map_kwargs(task)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
 
