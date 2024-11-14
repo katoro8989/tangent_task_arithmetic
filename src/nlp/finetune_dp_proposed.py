@@ -13,12 +13,27 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
-from linearize import LinearizedModelWraper, SimpleCallableT5Model
+from linearize import LinearizedModelWrapper, SimpleCallableT5Model
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.utils import cosine_lr
 
+TASKS = ["cola", "sst2", "mrpc", "rte"]
+
+
+# カスタム collate_fn の定義
+def collate_fn(batch):
+    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }
 
 def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
@@ -30,7 +45,7 @@ def finetune(rank, args, group):
         model_name = args.model.split("/")[-1]
 
     run = wandb.init(config=vars(args),
-                        project=f"{model_name}_GLUE_{train_dataset}_{args.ft_method}",
+                        project=f"{model_name}_GLUE_{train_dataset}_{args.finetuning_mode}",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
@@ -38,36 +53,36 @@ def finetune(rank, args, group):
 
     
     hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
-    model = simple_model_class = SimpleCallableT5Model(hf_t5_model)
+    model = SimpleCallableT5Model(hf_t5_model)
 
-    if args.ft_method == "linear":
+    if args.finetuning_mode == "linear":
         linearized_finetuning = True
-        model = LinearizedModelWraper(model)
+        model = LinearizedModelWrapper(model)
     else:
         linearized_finetuning = False
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
     dataset_class = load_dataset("glue", args.task)
+
+    dataset_class_to_orth = []
+    for task in args.other_tasks:
+        dataset_class_to_orth.append(load_dataset("glue", task))
+    
     
     preprocessor_class = get_preprocessor(args.task)
     preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
     map_kwargs = get_map_kwargs(args.task)
     encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
 
+    encoded_dataset_to_orth = []
+    for task_to_orth, dataset_class_to_orth in zip(args.other_tasks, dataset_class_to_orth):
+        preprocessor_class_to_orth = get_preprocessor(task_to_orth)
+        preprocessor_to_orth = preprocessor_class_to_orth(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
+        map_kwargs_to_orth = get_map_kwargs(task_to_orth)
+        encoded_dataset_to_orth.append(dataset_class_to_orth.map(preprocessor_to_orth, **map_kwargs_to_orth))
+
     # DataLoaderの作成
-    # カスタム collate_fn の定義
-    def collate_fn(batch):
-        # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
-        input_ids = torch.tensor([item['input_ids'] for item in batch])
-        attention_mask = torch.tensor([item['attention_mask'] for item in batch])
-        labels = torch.tensor([item['labels'] for item in batch])
-        
-        return {
-            'input_ids': input_ids,
-            'attention_mask': attention_mask,
-            'labels': labels
-        }
     
     if args.task == "mnli":
         train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
@@ -75,11 +90,18 @@ def finetune(rank, args, group):
     else:
         train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)
         eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
+    
+    train_dataloader_to_orth = []
+    for encoded_dataset_to_orth_ in encoded_dataset_to_orth:
+        train_dataloader_to_orth.append(DataLoader(encoded_dataset_to_orth_["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn))
 
     
     # Distribute the data and model across the GPUs.
     ddp_train_loader = distribute_loader(train_dataloader)
     ddp_eval_loader = distribute_loader(eval_dataloader)
+    ddp_train_loader_to_orth = []
+    for train_dataloader_to_orth_ in train_dataloader_to_orth:
+        ddp_train_loader_to_orth.append(distribute_loader(train_dataloader_to_orth_))
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
@@ -117,10 +139,12 @@ def finetune(rank, args, group):
     print_every = 100
     max_steps = args.max_steps
     iter = 0
+    len_orth = len(ddp_train_loader_to_orth)
+    penalty_coef = args.penalty
 
+    print("Starting training.")
     for epoch in range(args.epochs):
         ddp_model.train()
-
         for i, batch in enumerate(ddp_train_loader):
             start_time = time.time()
 
@@ -134,10 +158,28 @@ def finetune(rank, args, group):
             labels = batch['labels'].to(device)
             data_time = time.time() - start_time
 
+
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-            # loss = loss_fn(logits, labels)
             loss = loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
+
+            penalty = torch.tensor(0)
+            if iter > args.penalty_iter:
+                ddp_loader_to_orth = ddp_train_loader_to_orth[iter % len_orth]
+                try:
+                    batch_to_orth = next(ddp_loader_to_orth)
+                except StopIteration:
+                    ddp_train_loader_to_orth[iter % len_orth] = iter(ddp_train_loader_to_orth[iter % len_orth])
+                    ddp_loader_to_orth = ddp_train_loader_to_orth[iter % len_orth]
+                    batch_to_orth = next(ddp_loader_to_orth)
+
+                inputs_to_orth = batch_to_orth["input_ids"].to(device)
+                attention_mask_to_orth = batch_to_orth['attention_mask'].to(device)
+                tau_jacob = ddp_model.dp(input_ids=inputs_to_orth, attention_mask=attention_mask_to_orth)
+                dp_norms = torch.norm(tau_jacob, dim=1)
+                penalty = dp_norms.mean()
+            
+            loss += penalty_coef * penalty
 
             loss.backward()
 
@@ -182,6 +224,7 @@ def finetune(rank, args, group):
 
                         losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
 
+
                 loss_ave = sum(losses) / len(losses)
                 percent_complete = (iter / max_steps) * 100
 
@@ -195,56 +238,16 @@ def finetune(rank, args, group):
                     'val_loss': loss_ave,
                     'lr': optimizer.param_groups[0]['lr'],
                 })
-            # optimizer.step() を行った後に最大ステップ数に達しているか確認
             if  iter - 1 >= max_steps:
                 if is_main_process():
                     print(f"Reached maximum steps of {max_steps}. Ending training.")
-                break  # 内側のループを終了
+                break
 
-        # 外側のループで最大ステップ数に達しているか確認
         if iter - 1 >= max_steps:
             if is_main_process():
                 print(f"Reached maximum steps of {max_steps}. Ending training.")
-            break  # 外側のループを終了
+            break
 
-    # # evaluate on test set
-    # print("Evaluating on test set")
-    # ddp_model.eval()
-    # all_preds = []
-    # all_labels = []
-    # losses = []
-    # with torch.no_grad():
-    #     for batch in eval_dataloader:
-    #         input_ids = batch['input_ids'].to(device)
-    #         attention_mask = batch['attention_mask'].to(device)
-    #         labels = batch['labels'].to(device)
-
-    #         outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-    #         logits = outputs
-
-    #         losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
-    #         preds = torch.argmax(logits, dim=-1)
-
-    #         mask = labels != -100
-    #         preds_valid = preds[mask]
-    #         labels_valid = labels[mask]
-
-    #         all_preds.extend(preds_valid.cpu().numpy())
-    #         all_labels.extend(labels_valid.cpu().numpy())
-
-    # # sklearn の accuracy_score を使って精度を計算
-    # loss_ave = sum(losses) / len(losses)
-    # accuracy = accuracy_score(all_labels, all_preds)
-    # mcc = matthews_corrcoef(all_labels, all_preds)
-    # percent_complete = 100 * i / len(ddp_train_loader)
-
-    # if is_main_process():
-    #     print(
-    #         f"Final Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-    #         f"Final Val Acc: {accuracy}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-    #         f"Final Val MCC: {mcc}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
-    #         flush=True,
-    #     )
 
     if args.save is not None and is_main_process():
         zs_path = (
@@ -262,7 +265,6 @@ def finetune(rank, args, group):
     
 
     cleanup_ddp()
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finetuning of T5')
@@ -288,8 +290,10 @@ if __name__ == '__main__':
     parser.add_argument('--eval_accumulation_steps', type=int, default=10)
     parser.add_argument('--checkpoint_path', type=str, default=None)
     parser.add_argument('--auto_find_batch_size', action='store_true')
-    parser.add_argument('--ft_method', type=str, default="standard")
+    parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
+    parser.add_argument('--penalty', type=float, default=0.1)
+    parser.add_argument('--penalty_iter', type=int, default=-1)
     args = parser.parse_args()
 
     # HACK: Some command line arguments are overwritten by defaults here.
@@ -302,6 +306,9 @@ if __name__ == '__main__':
     "truncation": True,
     "return_tensors": "pt",
     }
+
+    #other tasks are the tasks in the TASK ecept the current task
+    args.other_tasks = [task for task in TASKS if task != args.task]
 
     if args.seed is not None:
         args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"

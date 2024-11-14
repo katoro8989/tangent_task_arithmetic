@@ -137,6 +137,19 @@ class LinearizedModelWrapper(nn.Module):
         )
         return out + dp
 
+    def dp(self, *args, **kwargs):
+        params0 = tuple(self.params0_values)
+        params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+        dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+        _, dp = jvp(
+            lambda *param: functional_call(
+                self.model, self.tuple_params_to_dict(param), args, kwargs
+            ),
+            params0,
+            dparams,
+        )
+        return dp
+
 class SimpleCallableT5Model(nn.Module):
     def __init__(self, model: T5ForConditionalGeneration):
         super().__init__()
