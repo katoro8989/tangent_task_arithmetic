@@ -45,7 +45,7 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
         result = matthews_corrcoef(all_labels, all_preds)
     elif args.task == "mrpc" or args.tasf == "qqp":
         _result1 = accuracy_score(all_labels, all_preds)
-        _result2 = f1_score(all_labels, all_preds)
+        _result2 = f1_score(all_labels, all_preds, average='micro')
         result = (_result1, _result2) / 2
     elif args.task == "stsb":
         _result1 = pearsonr(all_labels, all_preds)
@@ -78,7 +78,7 @@ def evaluate(model, tokenizer, eval_dataloader, args):
     return per_dataset_results
 
 def evaluate_task_vector_at_coef(
-    task_vector, pretrained_checkpoint, tokenizer, args, scaling_coef, posthoc_linearization=False
+    task_vector, pretrained_checkpoint, tokenizer, eval_dataloader, args, scaling_coef, posthoc_linearization=False
 ):
     model = task_vector.apply_to(
         pretrained_checkpoint, scaling_coef=scaling_coef
@@ -107,6 +107,7 @@ def evaluate_task_vector(
             task_vector,
             pretrained_checkpoint,
             tokenizer, 
+            eval_dataloader, 
             args,
             scaling_coef,
             posthoc_linearization,

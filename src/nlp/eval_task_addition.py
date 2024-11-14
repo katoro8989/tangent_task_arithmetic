@@ -75,8 +75,8 @@ for dataset in eval_datasets:
             LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
         )
     else:
-        pretrained_checkpoint = f"{args.save}/{dataset}Val/zeroshot.pt"
-        finetuned_checkpoint = f"{args.save}/{dataset}Val/finetuned.pt"
+        pretrained_checkpoint = f"{args.save}/{dataset}/zeroshot"
+        finetuned_checkpoint = f"{args.save}/{dataset}/finetuned"
         task_vectors.append(
             NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
         )
