@@ -32,6 +32,11 @@ if args.seed is not None:
 else:
     args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
 
+if args.seed is not None:
+    args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
+else:
+    args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
+
 accuracies = {}
 
 
@@ -127,8 +132,8 @@ if args.finetuning_mode == "none":
 elif args.finetuning_mode == "standard":
     save_path = f"{args.save}/ft_accuracies.json"
 elif args.finetuning_mode == "linear":
-    save_path = f"{args.save}/linear_ft_accuracies.json"
-    # save_path = f"{args.save}/linear_ft_accuracies_cars_dtd.json"
+    # save_path = f"{args.save}/linear_ft_accuracies.json"
+    save_path = f"{args.save}/linear_ft_accuracies_ours.json"
 elif args.finetuning_mode == "posthoc":
     save_path = f"{args.save}/posthoc_ft_accuracies.json"
 
