@@ -60,27 +60,7 @@ def finetune(rank, args, group):
     
     tokenizer = T5Tokenizer.from_pretrained(args.model)
 
-    dataset_class = load_dataset("glue", args.task)
-    
-    preprocessor_class = get_preprocessor(args.task)
-    preprocessor = preprocessor_class(tokenizer=tokenizer, tokenizer_kwargs=args.tokenizer_kwargs)
-    map_kwargs = get_map_kwargs(args.task)
-    encoded_dataset = dataset_class.map(preprocessor, **map_kwargs)
-
-    # 現在のvalidationデータのサイズ
-    num_validation_samples = len(encoded_dataset["validation"])
-
-    # trainデータからnum_validation_samplesと同じ数のサンプルをランダムに選択
-    train_indices = list(range(len(encoded_dataset["train"])))
-    random.shuffle(train_indices)  # インデックスをシャッフル
-    validation_indices = train_indices[:num_validation_samples]  # 最初のnum_validation_samples個をvalidation用に
-    train_indices = train_indices[num_validation_samples:]  # 残りをtrain用に
-
-    # Subsetを使ってデータセットを分割
-    new_train_dataset = Subset(encoded_dataset["train"], train_indices)
-    new_validation_dataset = Subset(encoded_dataset["train"], validation_indices)
-    test_dataset = encoded_dataset["validation"]
-
+    encoded_dataset = load_from_disk(f"/mnt2/dataset/glue_split/{train_dataset}")
 
     # DataLoaderの作成
     
@@ -236,7 +216,6 @@ def finetune(rank, args, group):
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
     
-
     cleanup_ddp()
 
 
@@ -283,12 +262,26 @@ if __name__ == '__main__':
         args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
     else:
         args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
+    
+    for dataset in [
+        "cola",
+        "mrpc",
+        "rte",
+        "sst2",
+    ]:
+        print("*" * 100)
+        print(f"Evaluating on {dataset}")
+        for finetuning_mode in ["standard", "linear"]:
+            args.finetuning_mode = finetuning_mode
+            print("*" * 100)
+            print(f"Finetuning mode: {finetuning_mode}")
 
-    print("=" * 100)
-    print(f"Finetuning {args.model} on {args.task}")
-    print("=" * 100)
+            args.task = dataset
+            print("=" * 100)
+            print(f"Finetuning {args.model} on {args.task}")
+            print("=" * 100)
 
-    group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
+            group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
 
-    torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
+            torch.multiprocessing.spawn(finetune, args=(args, group), nprocs=args.world_size)
                 
