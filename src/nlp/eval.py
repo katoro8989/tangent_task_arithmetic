@@ -16,11 +16,7 @@ from scipy.stats import pearsonr, spearmanr
 def eval_single_dataset(model, tokenizer, eval_dataloader, args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.cuda.set_device(args.device_number)
-    if args.finetuning_mode == "linear" or args.finetuning_mode == "none":
-        for param in model.parameters():
-            param = param.to(device)
-    else: 
-        model.to(device)
+    model.to(device)
     model.eval()
     all_preds = []
     all_labels = []
