@@ -115,10 +115,8 @@ def finetune(rank, args, group):
             labels[:, -1] = -100
             data_time = time.time() - start_time
 
-            attention_mask = batch["attention_mask"].to(device)
-
             # モデルの出力を取得
-            logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask)
+            logits = ddp_model(input_ids=input_ids)
             logits = outputs.logits
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
