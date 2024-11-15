@@ -4,6 +4,10 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score, matthews_corrcoef, f1_score
 from scipy.stats import pearsonr, spearmanr
 
+import os
+import sys
+
+
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 
