@@ -5,7 +5,7 @@ import torch
 
 
 import argparse
-from eval import eval_single_dataset
+from eval import eval_single_dataset, evaluate_task_vector, evaluate_task_vector_at_coef
 from linearize import LinearizedModelWrapper
 from task_vectors import LinearizedTaskVector, NonLinearTaskVector
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
