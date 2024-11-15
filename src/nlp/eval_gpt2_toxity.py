@@ -1,6 +1,8 @@
 import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from detoxify import Detoxify
+from tqdm import tqdm
+
 
 # デバイスの設定
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
