@@ -52,7 +52,8 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
 
-    print(encoded_dataset["train"][0])
+    max_step = (len(encoded_dataset["train"]) // args.train_batch_size) * args.epochs
+    args.max_steps = max_step
 
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=data_collator)
@@ -216,14 +217,14 @@ def finetune(rank, args, group):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finetuning of T5')
     parser.add_argument('--model', type=str, default="gpt2")
-    parser.add_argument('--epochs', type=int, default=100)
-    parser.add_argument('--max_steps', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--max_steps', type=int, default=0)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--train_batch_size', type=int, default=16)
     parser.add_argument('--eval_batch_size', type=int, default=8)
     parser.add_argument('--warmup_length', type=int, default=0)
-    parser.add_argument('--wd', type=int, default=0.)
+    parser.add_argument('--wd', type=int, default=0.1)
     parser.add_argument('--fp16', action='store_true', help='whether fp16')
     parser.add_argument('--logging_dir', type=int, default=None)
     parser.add_argument('--logging_strategy', type=str, default="steps")
@@ -251,7 +252,7 @@ if __name__ == '__main__':
     
     print("*" * 100)
     print(f"Finetuning on Civil Comments")
-    for finetuning_mode in ["standard", "linear"]:
+    for finetuning_mode in ["standard"]:
         args.finetuning_mode = finetuning_mode
         print("*" * 100)
         print(f"Finetuning mode: {finetuning_mode}")
