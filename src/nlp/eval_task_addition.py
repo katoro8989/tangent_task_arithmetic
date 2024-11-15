@@ -70,8 +70,8 @@ print("*" * 100)
 with open(ft_accuracies_path) as f:
     args.finetuning_accuracies = json.load(f)
 
-with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
-    pretrained_accuracies = json.load(f)
+# with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
+#     pretrained_accuracies = json.load(f)
 
 tokenizer = T5Tokenizer.from_pretrained(args.model)
 
