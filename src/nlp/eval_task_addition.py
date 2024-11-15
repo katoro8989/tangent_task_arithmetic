@@ -17,7 +17,6 @@ from src.utils import find_optimal_coef
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="google/flan-t5-small")
-parser.add_argument('--output_dir', type=str)
 parser.add_argument('--eval_batch_size', type=int, default=8)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
 parser.add_argument('--seed', type=int, default=42)
