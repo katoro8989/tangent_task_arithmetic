@@ -117,7 +117,6 @@ def finetune(rank, args, group):
 
             # モデルの出力を取得
             logits = ddp_model(input_ids=input_ids)
-            logits = outputs.logits
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
 
@@ -158,13 +157,19 @@ def finetune(rank, args, group):
                 with torch.no_grad():
                     for batch in ddp_eval_loader:
                         input_ids = batch['input_ids'].to(device)
-                        attention_mask = batch['attention_mask'].to(device)
-                        labels = batch['labels'].to(device)
+                        labels = input_ids.clone()
+                        labels[:, :-1] = input_ids[:, 1:]
+                        labels[:, -1] = -100
+                        data_time = time.time() - start_time
 
-                        outputs = ddp_model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                        logits = outputs
+                        # モデルの出力を取得
+                        logits = ddp_model(input_ids=input_ids)
+                        shift_logits = logits[..., :-1, :].contiguous()
+                        shift_labels = labels[..., 1:].contiguous()
 
-                        losses.append(loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1)).item())
+                        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
+                        losses.append(loss.item())
 
 
                 loss_ave = sum(losses) / len(losses)
