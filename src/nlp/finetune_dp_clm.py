@@ -120,7 +120,7 @@ def finetune(rank, args, group):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
 
-            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
             loss.backward()
 
@@ -167,7 +167,7 @@ def finetune(rank, args, group):
                         shift_logits = logits[..., :-1, :].contiguous()
                         shift_labels = labels[..., 1:].contiguous()
 
-                        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+                        loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
                         losses.append(loss.item())
 
