@@ -5,6 +5,7 @@ import numpy as np
 import torch
 
 
+
 def assign_learning_rate(param_group, new_lr):
     param_group["lr"] = new_lr
 
@@ -145,3 +146,14 @@ def nonlinear_advantage(nonlinear_acc, linear_acc, num_classes):
     -1 indicates the opposite.
     """
     return (nonlinear_acc - linear_acc) / (1.0 - 1.0 / num_classes)
+
+def collate_fn(batch):
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }

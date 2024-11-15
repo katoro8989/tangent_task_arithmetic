@@ -23,6 +23,8 @@ parser.add_argument('--finetuning_mode', type=str, default="standard")
 parser.add_argument('--seed', type=int, default=42)
 args = parser.parse_args()
 
+args.data_dir = "/mnt2/dataset/glue_split"
+
 args.tokenizer_kwargs = {
     "padding": "max_length",
     "truncation": True,
@@ -45,6 +47,8 @@ if args.finetuning_mode == "standard":
 elif args.finetuning_mode == "linear":
     print("Evaluating linear FT models.")
     ft_accuracies_path = os.path.join(args.save, "linear_ft_accuracies.json")
+elif args.finetuning_mode == "ours":
+    ft_accuracies_path = os.path.join(args.save, "linear_ft_accuracies_ours.json")
 elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
     ft_accuracies_path = os.path.join(args.save, "posthoc_ft_accuracies.json")
@@ -58,6 +62,8 @@ with open(ft_accuracies_path) as f:
 with open(os.path.join(args.save, "zeroshot_accuracies.json")) as f:
     pretrained_accuracies = json.load(f)
 
+tokenizer = T5Tokenizer.from_pretrained(args.model)
+
 eval_datasets = [
     "cola",
     "mrpc",
@@ -68,7 +74,7 @@ eval_datasets = [
 task_vectors = []
 
 for dataset in eval_datasets:
-    if args.finetuning_mode == "linear":
+    if args.finetuning_mode == "linear" or args.finetuning_mode == "ours":
         pretrained_checkpoint = f"{args.save}/{dataset}/linear_zeroshot"
         finetuned_checkpoint = f"{args.save}/{dataset}/linear_finetuned"
         task_vectors.append(
@@ -83,90 +89,50 @@ for dataset in eval_datasets:
 
 task_vector = sum(task_vectors)
 
-for dataset in [
-    "cola",
-    "mrpc",
-    "rte",
-    "sst2",
-]:
-    print("*" * 100)
-    print(f"Evaluating on {dataset}")
 
-    args.task = dataset
+args.eval_datasets = [dataset + "Val" for dataset in eval_datasets]
+args.control_dataset = None
 
-    pretrained_checkpoint = (
-        f"{args.save}/{dataset}/linear_zeroshot"
-        if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-        else f"{args.save}/{dataset}/zeroshot"
-    )
+# We use the validation set to choose the optimal coefficient.
+val_metrics = evaluate_task_vector(
+    task_vector,
+    pretrained_checkpoint,
+    tokenizer,
+    args,
+    posthoc_linearization=args.finetuning_mode == "posthoc",
+)
 
-    finetuned_checkpoint = (
-        f"{args.save}/{dataset}/linear_finetuned"
-        if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-        else f"{args.save}/{dataset}/finetuned"
-    )
+optimal_coef = find_optimal_coef(
+    val_metrics,
+    metric="avg_normalized_top1",
+    minimize=False,
+)
 
-    try:
-        task_vector = (
-            LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
-            if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-            else NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
-        )
-    except FileNotFoundError:
-        print(f"Error: Could not find {finetuned_checkpoint}.")
-        continue
+# Evaluate on the test set with the optimal coefficient.
+args.eval_datasets = [dataset for dataset in eval_datasets]
+test_metrics = evaluate_task_vector_at_coef(
+    task_vector,
+    pretrained_checkpoint,
+    tokenizer, 
+    args,
+    float(optimal_coef),
+    posthoc_linearization=args.finetuning_mode == "posthoc",
+)
 
-    if args.finetuning_mode == "none":
-        model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
-    elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear":
-        model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=1.0)
+print("=" * 100)
+print(f"Test normalized accuracy: {test_metrics['avg_normalized_top1']}")
+print(f"Test absolute accuracy: {test_metrics['avg_top1']}")
+additive_accuracies = {"test": test_metrics, "val": val_metrics}
 
-    tokenizer = T5Tokenizer.from_pretrained(args.model)
-
-    encoded_dataset = load_from_disk(f"/mnt2/dataset/glue_split/{args.task}")
-
-    # DataLoaderの作成
-    # カスタム collate_fn の定義
-    def collate_fn(batch):
-        # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
-        input_ids = torch.tensor([item['input_ids'] for item in batch])
-        attention_mask = torch.tensor([item['attention_mask'] for item in batch])
-        labels = torch.tensor([item['labels'] for item in batch])
-        
-        return {
-            'input_ids': input_ids,
-            'attention_mask': attention_mask,
-            'labels': labels
-        }
-    
-    if args.task == "mnli":
-        val_dataloader = DataLoader(encoded_dataset["validation_matched"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
-        test_dataloader = DataLoader(encoded_dataset["test_matched"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
-    else:
-        val_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
-        test_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
-
-    for split in ["validation", "test"]:
-        eval_dataloader = val_dataloader if split == "validation" else test_dataloader
-        eval_dataset = dataset if split == "test" else f"{dataset}Val"
-        # Evaluate
-        print("=" * 100)
-        print(f"Evaluating on {split} split.")
-        accuracies[eval_dataset] = eval_single_dataset(
-            model, tokenizer, eval_dataloader, args
-        )["top1"]
-
-
-# Save results
-if args.finetuning_mode == "none":
-    save_path = f"{args.save}/zeroshot_accuracies.json"
-elif args.finetuning_mode == "standard":
-    save_path = f"{args.save}/ft_accuracies.json"
+if args.finetuning_mode == "standard":
+    save_file = f"{args.save}/additions.json"
 elif args.finetuning_mode == "linear":
-    save_path = f"{args.save}/linear_ft_accuracies.json"
-    # save_path = f"{args.save}/linear_ft_accuracies_cars_dtd.json"
+    save_file = f"{args.save}/linear_additions.json"
+elif args.finetuning_mode == "ours":
+    save_file = f"{args.save}/ours_additions.json"
 elif args.finetuning_mode == "posthoc":
-    save_path = f"{args.save}/posthoc_ft_accuracies.json"
+    save_file = f"{args.save}/posthoc_additions.json"
+with open(save_file, "w") as f:
+    json.dump(additive_accuracies, f, indent=4)
 
-with open(save_path, "w") as f:
-    json.dump(accuracies, f)
+

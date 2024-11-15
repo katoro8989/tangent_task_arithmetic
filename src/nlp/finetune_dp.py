@@ -19,9 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.utils import cosine_lr
 
-# カスタム collate_fn の定義
 def collate_fn(batch):
-    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
     input_ids = torch.tensor([item['input_ids'] for item in batch])
     attention_mask = torch.tensor([item['attention_mask'] for item in batch])
     labels = torch.tensor([item['labels'] for item in batch])
@@ -62,7 +60,6 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk(f"/mnt2/dataset/glue_split/{train_dataset}")
 
-    # DataLoaderの作成
     
     if args.task == "mnli":
         train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=collate_fn)

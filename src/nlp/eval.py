@@ -4,6 +4,12 @@ from tqdm import tqdm
 from sklearn.metrics import accuracy_score, matthews_corrcoef, f1_score
 from scipy.stats import pearsonr, spearmanr
 
+from datasets import load_from_disk
+from torch.utils.data import DataLoader
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+from src.utils import collate_fn
+
 # sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 # from src import utils
 # from src.datasets.common import get_dataloader, maybe_dictionarize
@@ -14,9 +20,7 @@ from scipy.stats import pearsonr, spearmanr
 
 
 def eval_single_dataset(model, tokenizer, eval_dataloader, args):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.cuda.set_device(args.device_number)
-    # model.to(device)
     model.eval()
     all_preds = []
     all_labels = []
@@ -59,7 +63,7 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
 
     return {"top1": result}
 
-def evaluate(model, tokenizer, eval_dataloader, args):
+def evaluate(model, tokenizer, args):
     if args.eval_datasets is None:
         return
     per_dataset_results = {}
@@ -70,6 +74,15 @@ def evaluate(model, tokenizer, eval_dataloader, args):
     )
     for dataset_name in eval_datasets:
         print("Evaluating on", dataset_name)
+        args.task = dataset_name
+
+        #from args.data_dir/dataset_name
+        task_dir = os.path.join(args.data_dir, dataset_name)
+        encoded_dataset = load_from_disk(task_dir)
+        if "Val" in dataset_name:
+            eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
+        else:
+            eval_dataloader = DataLoader(encoded_dataset["test"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
 
         results = eval_single_dataset(model, tokenizer, eval_dataloader, args)
 
@@ -79,13 +92,16 @@ def evaluate(model, tokenizer, eval_dataloader, args):
     return per_dataset_results
 
 def evaluate_task_vector_at_coef(
-    task_vector, pretrained_checkpoint, tokenizer, eval_dataloader, args, scaling_coef, posthoc_linearization=False
+    task_vector, pretrained_checkpoint, tokenizer, args, scaling_coef, posthoc_linearization=False
 ):
     model = task_vector.apply_to(
         pretrained_checkpoint, scaling_coef=scaling_coef
     )
 
-    coef_info = evaluate(model, tokenizer, eval_dataloader, args)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    coef_info = evaluate(model, tokenizer, args)
 
     coef_info = add_normalized_accuracy(coef_info, args)
     coef_info["avg_normalized_top1"] = np.mean(
@@ -108,7 +124,6 @@ def evaluate_task_vector(
             task_vector,
             pretrained_checkpoint,
             tokenizer, 
-            eval_dataloader, 
             args,
             scaling_coef,
             posthoc_linearization,
