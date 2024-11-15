@@ -52,6 +52,8 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
 
+    print(encoded_dataset["train"][0])
+
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=data_collator)
     
