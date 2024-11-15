@@ -139,9 +139,9 @@ class LinearizedModelWrapper(nn.Module):
 
     def dp(self, *args, **kwargs):
         # decoder_input_idsがない場合は自動的に生成
-        if 'decoder_input_ids' not in kwargs:
-            batch_size = kwargs['input_ids'].size(0)
-            kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
+        # if 'decoder_input_ids' not in kwargs:
+        #     batch_size = kwargs['input_ids'].size(0)
+        #     kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
 
 
         params0 = tuple(self.params0_values)
