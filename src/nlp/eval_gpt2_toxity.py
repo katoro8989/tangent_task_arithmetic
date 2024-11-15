@@ -11,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 finetuning_mode = "linear"
 
 # トークナイザーとモデルのロード
-model_name = f"/mnt2/gpt2_civil_checkpoints_42/gpt2/finetuned"  # 必要に応じて他のモデルに変更
+model_name = f"/mnt2/gpt2_civil_checkpoints_42/gpt2/linear_finetuned"  # 必要に応じて他のモデルに変更
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token  # パディングトークンをEOSトークンに設定
 
