@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 args.data_dir = "/mnt2/dataset/glue_split"
 
-args.n_eval_points = 2
+args.n_eval_points = 1
 args.eval_max_points = 1.0
 
 args.tokenizer_kwargs = {
