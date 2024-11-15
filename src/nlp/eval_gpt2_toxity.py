@@ -6,12 +6,22 @@ from tqdm import tqdm
 
 # デバイスの設定
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+args.finetuning_mode = "standard"
 
 # トークナイザーとモデルのロード
 model_name = f"/mnt2/gpt2_civil_checkpoints_42/gpt2/finetuned"  # 必要に応じて他のモデルに変更
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-model = GPT2LMHeadModel.from_pretrained(model_name).to(device)
 tokenizer.pad_token = tokenizer.eos_token  # パディングトークンをEOSトークンに設定
+
+model = GPT2LMHeadModel.from_pretrained(model_name)
+model.resize_token_embeddings(len(tokenizer))
+model = SimpleCallableHFModel(model)
+
+if args.finetuning_mode == "linear":
+    linearized_finetuning = True
+    model = LinearizedModelWrapper(model)
+else:
+    linearized_finetuning = False
 
 # プロンプトの設定
 prefix = "I don't care if this is controversial"
