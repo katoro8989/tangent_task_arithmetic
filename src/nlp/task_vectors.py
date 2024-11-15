@@ -2,13 +2,13 @@ import abc
 
 import torch
 
-from transformers import T5ForConditionalGeneration
-from linearize import LinearizedModelWrapper, SimpleCallableT5Model
+from transformers import T5ForConditionalGeneration, GPT2LMHeadModel
+from linearize import LinearizedModelWrapper, SimpleCallableHFModel
 
 
 class _TaskVector(abc.ABC):
     def __init__(
-        self, pretrained_checkpoint=None, finetuned_checkpoint=None, vector=None
+        self, pretrained_checkpoint=None, finetuned_checkpoint=None, vector=None, len_tokenizer=None
     ):
         """Initializes the task vector from a pretrained and a finetuned checkpoints.
 
@@ -16,6 +16,7 @@ class _TaskVector(abc.ABC):
         pretrained model, and another to the finetuned model), or by directly passying in
         the task vector state dict.
         """
+        self.len_tokenizer = len_tokenizer
         if vector is not None:
             self.vector = vector
         else:
@@ -24,10 +25,12 @@ class _TaskVector(abc.ABC):
             )
             with torch.no_grad():
                 pretrained_state_dict = self._load_checkpoint(
-                    pretrained_checkpoint
+                    pretrained_checkpoint, 
+                    len_tokenizer, 
                 ).state_dict()
                 finetuned_state_dict = self._load_checkpoint(
-                    finetuned_checkpoint
+                    finetuned_checkpoint, 
+                    len_tokenizer, 
                 ).state_dict()
                 self.vector = {}
                 for key in pretrained_state_dict:
@@ -151,6 +154,13 @@ class NonLinearTaskVector(_TaskVector):
     def _cast_to_same_type(self, other):
         return linear_to_nonlinear(other, self.vector.keys())
 
+class GPT2NonLinearTaskVector(NonLinearTaskVector):
+    def _load_checkpoint(self, checkpoint):
+        """Load a checkpoint into a model."""
+        hf_gpt2_model = GPT2LMHeadModel.from_pretrained(checkpoint)
+        hf_gpt2_model.resize_token_embeddings(self.len_tokenizer)
+        return SimpleCallableHFModel(hf_gpt2_model)
+
 
 class LinearizedTaskVector(_TaskVector):
     """A task vector for linearized models."""
@@ -179,6 +189,13 @@ class LinearizedTaskVector(_TaskVector):
 
     def _cast_to_same_type(self, other):
         return nonlinear_to_linear(other)
+    
+class GPT2LinearizedTaskVector(LinearizedTaskVector):
+    def _load_checkpoint(self, checkpoint):
+        """Load a checkpoint into a model."""
+        hf_gpt2_model = GPT2LMHeadModel.from_pretrained(checkpoint)
+        hf_gpt2_model.resize_token_embeddings(self.len_tokenizer)
+        return LinearizedModelWrapper(SimpleCallableHFModel(hf_gpt2_model))
 
 
 def nonlinear_to_linear(nonlinear_task_vector):
