@@ -18,6 +18,7 @@ tokenizer.pad_token = tokenizer.eos_token  # パディングトークンをEOS�
 model = GPT2LMHeadModel.from_pretrained(model_name)
 model.resize_token_embeddings(len(tokenizer))
 model = SimpleCallableHFModel(model)
+model = model.to(device)
 
 if finetuning_mode == "linear":
     linearized_finetuning = True
