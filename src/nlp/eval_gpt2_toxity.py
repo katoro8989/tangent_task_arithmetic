@@ -3,6 +3,8 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from detoxify import Detoxify
 from tqdm import tqdm
 
+from linearize import LinearizedModelWrapper, SimpleCallableHFModel
+
 
 # デバイスの設定
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
