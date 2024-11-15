@@ -24,11 +24,8 @@ def finetune(rank, args, group):
 
     ckpdir = args.save
 
-    if "/" in args.model:
-        model_name = args.model.split("/")[-1]
-
     run = wandb.init(config=vars(args),
-                        project=f"{model_name}_CivilCom_{args.finetuning_mode}",
+                        project=f"{args.model}_CivilCom_{args.finetuning_mode}",
                         entity='katoro13',
                         name=f"process_{rank}",
                         group=group, 
