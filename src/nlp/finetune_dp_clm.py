@@ -52,9 +52,6 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
 
-    for sample in encoded_dataset["train"][:5]:
-        print(sample)
-
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
     eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=data_collator)
     
@@ -116,10 +113,7 @@ def finetune(rank, args, group):
             labels[:, -1] = -100
             data_time = time.time() - start_time
 
-            # バッチデータをデバイスに移動
-            input_ids = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
 
             # モデルの出力を取得
             logits = ddp_model(input_ids=input_ids, attention_mask=attention_mask)
