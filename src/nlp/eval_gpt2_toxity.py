@@ -8,7 +8,7 @@ from linearize import LinearizedModelWrapper, SimpleCallableHFModel
 
 # デバイスの設定
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-finetuning_mode = "standard"
+finetuning_mode = "linear"
 
 # トークナイザーとモデルのロード
 model_name = f"/mnt2/gpt2_civil_checkpoints_42/gpt2/finetuned"  # 必要に応じて他のモデルに変更
