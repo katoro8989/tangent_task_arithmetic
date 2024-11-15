@@ -216,7 +216,6 @@ def finetune(rank, args, group):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finetuning of T5')
-    parser.add_argument('--task', type=str, default="civil comments")
     parser.add_argument('--model', type=str, default="gpt2")
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--max_steps', type=int, default=2)
@@ -252,16 +251,11 @@ if __name__ == '__main__':
         args.save = f"/mnt2/gpt2_civil_checkpoints_{args.model}"
     
     print("*" * 100)
-    print(f"Evaluating on {dataset}")
+    print(f"Finetuning on Civil Comments")
     for finetuning_mode in ["standard", "linear"]:
         args.finetuning_mode = finetuning_mode
         print("*" * 100)
         print(f"Finetuning mode: {finetuning_mode}")
-
-        args.task = dataset
-        print("=" * 100)
-        print(f"Finetuning {args.model} on {args.task}")
-        print("=" * 100)
 
         group = "{}_{}".format(time.strftime('%Y%m%d-%H%M%S'), str(uuid.uuid4()))
 
