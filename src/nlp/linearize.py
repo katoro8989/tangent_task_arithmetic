@@ -8,7 +8,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from torch.func import functional_call, jvp
 
-from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer
+from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer, PreTrainedModel
 
 
 
@@ -78,7 +78,7 @@ def dict_params_to_tuple(dict_params: dict):
 
 
 class LinearizedModelWrapper(nn.Module):
-    def __init__(self, model: T5ForConditionalGeneration, init_model: T5ForConditionalGeneration = None):
+    def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
         """
         Initializes a linearized model.
 
@@ -156,8 +156,8 @@ class LinearizedModelWrapper(nn.Module):
         )
         return dp
 
-class SimpleCallableT5Model(nn.Module):
-    def __init__(self, model: T5ForConditionalGeneration):
+class SimpleCallableHFModel(nn.Module):
+    def __init__(self, model: PreTrainedModel):
         super().__init__()
         self.model = model
     

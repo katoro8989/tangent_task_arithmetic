@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
-from linearize import LinearizedModelWrapper, SimpleCallableT5Model
+from linearize import LinearizedModelWrapper, SimpleCallableHFModel
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
@@ -48,7 +48,7 @@ def finetune(rank, args, group):
 
     
     hf_t5_model = T5ForConditionalGeneration.from_pretrained(args.model)
-    model = SimpleCallableT5Model(hf_t5_model)
+    model = SimpleCallableHFModel(hf_t5_model)
 
     if args.finetuning_mode == "linear":
         linearized_finetuning = True
