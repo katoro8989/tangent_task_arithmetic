@@ -51,8 +51,8 @@ def finetune(rank, args, group):
         
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
-    
-    for sample in tokenized_datasets["train"][:5]:
+
+    for sample in encoded_dataset["train"][:5]:
         print(sample)
 
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
