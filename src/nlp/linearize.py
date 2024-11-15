@@ -114,27 +114,47 @@ class LinearizedModelWrapper(nn.Module):
             state_dict[k] = p
         return state_dict
 
-    def forward(self, *args, **kwargs):
+    # def forward(self, *args, **kwargs):
+    #     """
+    #     Computes the linearized model output using a first-order Taylor decomposition.
+
+    #     Args:
+    #         *args: Positional arguments to be passed to the model.
+    #         **kwargs: Keyword arguments to be passed to the model.
+
+    #     Returns:
+    #         torch.Tensor: The output of the linearized model, computed using a first-order Taylor decomposition.
+    #     """
+    #     params0 = tuple(self.params0_values)
+    #     params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+    #     dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+    #     out, dp = jvp(
+    #         lambda *param: functional_call(
+    #             self.model, self.tuple_params_to_dict(param), args, kwargs
+    #         ),
+    #         params0,
+    #         dparams,
+    #     )
+    #     return out + dp
+    
+    def forward(self, input_ids, attention_mask=None, past_key_values=None, **kwargs):
         """
-        Computes the linearized model output using a first-order Taylor decomposition.
-
-        Args:
-            *args: Positional arguments to be passed to the model.
-            **kwargs: Keyword arguments to be passed to the model.
-
-        Returns:
-            torch.Tensor: The output of the linearized model, computed using a first-order Taylor decomposition.
+        Computes the linearized output, supporting `past_key_values`.
         """
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-        out, dp = jvp(
-            lambda *param: functional_call(
-                self.model, self.tuple_params_to_dict(param), args, kwargs
-            ),
-            params0,
-            dparams,
-        )
+
+        def model_call(*param):
+            return self.model(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                past_key_values=past_key_values,
+                **kwargs
+            )
+
+        # Use jvp for linearized calculation
+        out, dp = jvp(model_call, params0, dparams)
         return out + dp
 
     def dp(self, *args, **kwargs):
@@ -158,7 +178,7 @@ class LinearizedModelWrapper(nn.Module):
 
     def generate(self, input_ids, max_length=50, temperature=1.0, **kwargs):
         """
-        Generates sequences using a linearized model.
+        Generates sequences using the linearized model.
         """
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
@@ -168,7 +188,7 @@ class LinearizedModelWrapper(nn.Module):
         past_key_values = None
 
         for _ in range(max_length):
-            # 線形化されたステップごとの出力を計算
+            # Linearized step-by-step generation
             logits, _ = jvp(
                 lambda *param: functional_call(
                     self.model,
@@ -179,19 +199,19 @@ class LinearizedModelWrapper(nn.Module):
                 params0,
                 dparams,
             )
-            logits = logits[:, -1, :]  # 最後のトークンに対応するロジットを取得
+            logits = logits[:, -1, :]  # Get logits for the last token
             probs = torch.softmax(logits / temperature, dim=-1)
             next_token = torch.multinomial(probs, num_samples=1)
 
-            # 次のトークンを生成
+            # Append the new token
             generated = torch.cat([generated, next_token], dim=-1)
 
-            # 更新されたpast_key_valuesを取得（効率化のためキャッシュ）
+            # Update past_key_values for efficient generation
             with torch.no_grad():
                 outputs = self.model(input_ids=generated, past_key_values=past_key_values, **kwargs)
                 past_key_values = outputs.past_key_values
 
-            # 生成終了条件（例: EOSトークン）があれば終了
+            # Stop if EOS token is generated
             if next_token.item() == self.model.config.eos_token_id:
                 break
 
