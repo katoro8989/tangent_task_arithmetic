@@ -79,7 +79,10 @@ def evaluate(model, tokenizer, args):
     )
     for dataset_name in eval_datasets:
         print("Evaluating on", dataset_name)
-        args.task = dataset_name[:-3]
+        if "Val" in dataset_name:
+            args.task = dataset_name[:-3]
+        else:
+            args.task = dataset_name
 
         #from args.data_dir/dataset_name
         task_dir = os.path.join(args.data_dir, args.task)
