@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 # デバイスの設定
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-args.finetuning_mode = "standard"
+finetuning_mode = "standard"
 
 # トークナイザーとモデルのロード
 model_name = f"/mnt2/gpt2_civil_checkpoints_42/gpt2/finetuned"  # 必要に応じて他のモデルに変更
@@ -17,7 +17,7 @@ model = GPT2LMHeadModel.from_pretrained(model_name)
 model.resize_token_embeddings(len(tokenizer))
 model = SimpleCallableHFModel(model)
 
-if args.finetuning_mode == "linear":
+if finetuning_mode == "linear":
     linearized_finetuning = True
     model = LinearizedModelWrapper(model)
 else:
