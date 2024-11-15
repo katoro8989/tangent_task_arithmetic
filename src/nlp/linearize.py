@@ -156,6 +156,47 @@ class LinearizedModelWrapper(nn.Module):
         )
         return dp
 
+    def generate(self, input_ids, max_length=50, temperature=1.0, **kwargs):
+        """
+        Generates sequences using a linearized model.
+        """
+        params0 = tuple(self.params0_values)
+        params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+        dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+
+        generated = input_ids.clone()
+        past_key_values = None
+
+        for _ in range(max_length):
+            # 線形化されたステップごとの出力を計算
+            logits, _ = jvp(
+                lambda *param: functional_call(
+                    self.model,
+                    self.tuple_params_to_dict(param),
+                    (generated,),
+                    {"past_key_values": past_key_values, **kwargs},
+                ),
+                params0,
+                dparams,
+            )
+            logits = logits[:, -1, :]  # 最後のトークンに対応するロジットを取得
+            probs = torch.softmax(logits / temperature, dim=-1)
+            next_token = torch.multinomial(probs, num_samples=1)
+
+            # 次のトークンを生成
+            generated = torch.cat([generated, next_token], dim=-1)
+
+            # 更新されたpast_key_valuesを取得（効率化のためキャッシュ）
+            with torch.no_grad():
+                outputs = self.model(input_ids=generated, past_key_values=past_key_values, **kwargs)
+                past_key_values = outputs.past_key_values
+
+            # 生成終了条件（例: EOSトークン）があれば終了
+            if next_token.item() == self.model.config.eos_token_id:
+                break
+
+        return generated
+
 class SimpleCallableHFModel(nn.Module):
     def __init__(self, model: PreTrainedModel):
         super().__init__()
@@ -167,3 +208,10 @@ class SimpleCallableHFModel(nn.Module):
 
     def save_pretrained(self, path):
         self.model.save_pretrained(path)
+    
+    def generate(self, *args, **kwargs):
+        """
+        Generates sequences using the underlying `self.model`.
+        Passes all arguments directly to the underlying model's `generate` method.
+        """
+        return self.model.generate(*args, **kwargs)
