@@ -36,10 +36,16 @@ args.tokenizer_kwargs = {
     "return_tensors": "pt",
     }
 
-if args.seed is not None:
-    args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
+if args.finetuning_mode == "ours":
+    if args.seed is not None:
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
+    else:
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
 else:
-    args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
+    if args.seed is not None:
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
+    else:
+        args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
 
 accuracies = {}
 
