@@ -41,7 +41,7 @@ def finetune(rank, args, group):
     
     model = GPT2LMHeadModel.from_pretrained(args.model)
     model.resize_token_embeddings(len(tokenizer))
-    model = SimpleCallableHFModel(hf_t5_model)
+    model = SimpleCallableHFModel(model)
 
     if args.finetuning_mode == "linear":
         linearized_finetuning = True
