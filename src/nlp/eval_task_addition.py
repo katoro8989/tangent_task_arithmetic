@@ -11,6 +11,8 @@ from task_vectors import LinearizedTaskVector, NonLinearTaskVector
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from torch.utils.data import DataLoader
 
+import os
+import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.utils import find_optimal_coef
 
