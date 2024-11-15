@@ -114,49 +114,29 @@ class LinearizedModelWrapper(nn.Module):
             state_dict[k] = p
         return state_dict
 
-    # def forward(self, *args, **kwargs):
-    #     """
-    #     Computes the linearized model output using a first-order Taylor decomposition.
-
-    #     Args:
-    #         *args: Positional arguments to be passed to the model.
-    #         **kwargs: Keyword arguments to be passed to the model.
-
-    #     Returns:
-    #         torch.Tensor: The output of the linearized model, computed using a first-order Taylor decomposition.
-    #     """
-    #     params0 = tuple(self.params0_values)
-    #     params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
-    #     dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-    #     out, dp = jvp(
-    #         lambda *param: functional_call(
-    #             self.model, self.tuple_params_to_dict(param), args, kwargs
-    #         ),
-    #         params0,
-    #         dparams,
-    #     )
-    #     return out + dp
-    
-    def forward(self, input_ids, attention_mask=None, past_key_values=None, **kwargs):
+    def forward(self, *args, **kwargs):
         """
-        Computes the linearized output, supporting `past_key_values`.
+        Computes the linearized model output using a first-order Taylor decomposition.
+
+        Args:
+            *args: Positional arguments to be passed to the model.
+            **kwargs: Keyword arguments to be passed to the model.
+
+        Returns:
+            torch.Tensor: The output of the linearized model, computed using a first-order Taylor decomposition.
         """
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-
-        def model_call(*param):
-            return self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                past_key_values=past_key_values,
-                **kwargs
-            )
-
-        # Use jvp for linearized calculation
-        out, dp = jvp(model_call, params0, dparams)
+        out, dp = jvp(
+            lambda *param: functional_call(
+                self.model, self.tuple_params_to_dict(param), args, kwargs
+            ),
+            params0,
+            dparams,
+        )
         return out + dp
-
+    
     def dp(self, *args, **kwargs):
         # decoder_input_idsがない場合は自動的に生成
         # if 'decoder_input_ids' not in kwargs:
@@ -222,9 +202,9 @@ class SimpleCallableHFModel(nn.Module):
         super().__init__()
         self.model = model
     
-    def forward(self, input_ids, attention_mask=None, labels=None, decoder_input_ids=None):
+    def forward(self, input_ids, attention_mask=None, labels=None, past_key_values=None, decoder_input_ids=None):
         # return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, decoder_input_ids=decoder_input_ids).logits
-        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels).logits
+        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, past_key_values=past_key_values).logits
 
     def save_pretrained(self, path):
         self.model.save_pretrained(path)
