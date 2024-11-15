@@ -78,10 +78,10 @@ def evaluate(model, tokenizer, args):
     )
     for dataset_name in eval_datasets:
         print("Evaluating on", dataset_name)
-        args.task = dataset_name
+        args.task = dataset_name[:-3]
 
         #from args.data_dir/dataset_name
-        task_dir = os.path.join(args.data_dir, dataset_name)
+        task_dir = os.path.join(args.data_dir, args.task)
         encoded_dataset = load_from_disk(task_dir)
         if "Val" in dataset_name:
             eval_dataloader = DataLoader(encoded_dataset["validation"], batch_size=args.eval_batch_size, collate_fn=collate_fn)
