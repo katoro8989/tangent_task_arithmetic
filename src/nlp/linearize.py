@@ -202,9 +202,9 @@ class SimpleCallableHFModel(nn.Module):
         super().__init__()
         self.model = model
     
-    def forward(self, input_ids, attention_mask=None, labels=None, past_key_values=None, decoder_input_ids=None):
+    def forward(self, *args, **kwargs):
         # return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, decoder_input_ids=decoder_input_ids).logits
-        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, past_key_values=past_key_values).logits
+        return self.model(*args, **kwargs).logits
 
     def save_pretrained(self, path):
         self.model.save_pretrained(path)
