@@ -19,17 +19,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
 from src.utils import cosine_lr
 
-def collate_fn(batch):
-    input_ids = torch.tensor([item['input_ids'] for item in batch])
-    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
-    labels = torch.tensor([item['labels'] for item in batch])
-    
-    return {
-        'input_ids': input_ids,
-        'attention_mask': attention_mask,
-        'labels': labels
-    }
-
 def finetune(rank, args, group):
     setup_ddp(rank, args.world_size, port=args.port)
 
@@ -258,12 +247,6 @@ if __name__ == '__main__':
     args.world_size = 4
     args.port = 12345
     args.seed = 42
-
-    args.tokenizer_kwargs = {
-    "padding": "max_length",
-    "truncation": True,
-    "return_tensors": "pt",
-    }
 
     if args.seed is not None:
         args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}/{args.model}"
