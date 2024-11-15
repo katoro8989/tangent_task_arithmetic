@@ -22,8 +22,8 @@ def create_and_save_comments(data_path):
     def tokenize_function(examples):
         return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
 
-    tokenized_train = toxic_train.map(tokenize_function, batched=True)
-    tokenized_validation = toxic_validation.map(tokenize_function, batched=True)
+    tokenized_train = toxic_train.map(tokenize_function, batched=True, remove_columns=["text"])
+    tokenized_validation = toxic_validation.map(tokenize_function, batched=True, remove_columns=["text"])
 
     # Combine into a DatasetDict
     tokenized_datasets = DatasetDict({
