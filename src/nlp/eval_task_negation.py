@@ -41,7 +41,7 @@ pretrained_checkpoint = (
 )
 
 finetuned_checkpoint = (
-    f"{args.save}/linear_finetuned"
+    f"{args.save}/linear_finetuned_1"
     if args.finetuning_mode == "linear" or args.finetuning_mode == "none" or args.finetuning_mode == "ours"
     else f"{args.save}/finetuned"
 )
