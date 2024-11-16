@@ -36,13 +36,13 @@ tokenizer.pad_token = tokenizer.eos_token
 
 pretrained_checkpoint = (
     f"{args.save}/linear_zeroshot"
-    if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
+    if args.finetuning_mode == "linear" or args.finetuning_mode == "none" or args.finetuning_mode == "ours"
     else f"{args.save}/zeroshot"
 )
 
 finetuned_checkpoint = (
     f"{args.save}/linear_finetuned"
-    if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
+    if args.finetuning_mode == "linear" or args.finetuning_mode == "none" or args.finetuning_mode == "ours"
     else f"{args.save}/finetuned"
 )
 
