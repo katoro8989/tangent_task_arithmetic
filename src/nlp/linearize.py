@@ -168,11 +168,13 @@ class LinearizedModelWrapper(nn.Module):
 
         return self.linearized_model.dp(*args, **kwargs)
     
-    def generate(self,input_ids=None,  *args, **kwargs):
+    def generate(self,input_ids=None, *args, **kwargs):
         """
         Generates sequences using the underlying `self.model`.
         Passes all arguments directly to the underlying model's `generate` method.
         """
+        if "input_ids" in kwargs:
+            input_ids = kwargs.pop("input_ids")
         return self.linearized_model.generate(input_ids=input_ids, *args, **kwargs)
 
     
