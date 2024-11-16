@@ -131,6 +131,9 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         if input_ids is None:
             raise ValueError("`input_ids` must be provided for generation.")
         
+        if "input_ids" in kwargs:
+            raise ValueError("`input_ids` must be passed as a positional argument.")
+        
         # Ensure input_ids is passed explicitly to the generate method
         return super().generate(input_ids=input_ids, *args, **kwargs)
 
@@ -168,13 +171,13 @@ class LinearizedModelWrapper(nn.Module):
 
         return self.linearized_model.dp(*args, **kwargs)
     
-    def generate(self, *args, **kwargs):
+    def generate(self, input_ids=None, *args, **kwargs):
         """
         Generates sequences using the underlying `self.model`.
         Passes all arguments directly to the underlying model's `generate` method.
         """
-        if "input_ids" in kwargs:
-            input_ids = kwargs.pop('input_ids', None)
+        if input_ids is None:
+            raise ValueError("`input_ids` must be provided.")
         return self.linearized_model.generate(input_ids=input_ids, *args, **kwargs)
 
     
