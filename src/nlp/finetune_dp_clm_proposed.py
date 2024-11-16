@@ -237,7 +237,7 @@ def finetune(rank, args, group):
                 percent_complete = (iter_step / max_steps) * 100
 
                 print(
-                    f"Train Step: {iter_step - 1} [{percent_complete:.0f}% {iter - 1}/{max_steps}]\t"  # noqa: E501
+                    f"Train Step: {iter_step - 1} [{percent_complete:.0f}% {iter_step - 1}/{max_steps}]\t"  # noqa: E501
                     f"Val Loss: {loss_ave:.6f}\tData (t) {data_time:.3f}\tBatch (t) {batch_time:.3f}",  # noqa: E501
                     flush=True,
                 )
