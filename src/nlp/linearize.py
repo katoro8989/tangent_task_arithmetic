@@ -181,7 +181,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             params0,
             dparams,
         )
-        return out + dp
+        return out.logits + dp.logits
         # return CausalLMOutputWithPast(logits=out + dp)
     
     def dp(self, *args, **kwargs):
@@ -196,7 +196,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             params0,
             dparams,
         )
-        return dp
+        return dp.logits
         
     def generate(self, **kwargs):
         if "input_ids" not in kwargs and "inputs" not in kwargs:
@@ -265,7 +265,7 @@ class LinearizedGPT2Wrapper(nn.Module):
             p.requires_grad_(False)
 
         self.linearized_model = LinearizedGPT2LMHeadModel(
-            model.model.config, model, self.params0_values, self.params0_keys
+            model.model.config, model.model, self.params0_values, self.params0_keys
         )
 
     def forward(self, *args, **kwargs):
