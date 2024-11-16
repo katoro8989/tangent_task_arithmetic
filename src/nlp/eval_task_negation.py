@@ -105,7 +105,7 @@ best_coef = 0.0
 
 for scaling_coef in np.linspace(0.0, 1.0, 11):
 
-    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=scaling_coef)
+    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-scaling_coef)
 
     model = model.to(device)
     model.eval()
