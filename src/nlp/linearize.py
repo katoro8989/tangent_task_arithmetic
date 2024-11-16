@@ -9,6 +9,7 @@ from copy import deepcopy
 from torch.func import functional_call, jvp
 
 from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer, PreTrainedModel, GPT2LMHeadModel
+from transformers.modeling_outputs import CausalLMOutputWithPast
 
 
 
@@ -169,7 +170,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             params0,
             dparams,
         )
-        return out + dp
+        # return out + dp
+        return CausalLMOutputWithPast(logits=out + dp)
     
     def dp(self, *args, **kwargs):
 
