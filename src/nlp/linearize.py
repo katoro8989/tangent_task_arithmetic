@@ -114,10 +114,6 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         return out + dp
     
     def dp(self, *args, **kwargs):
-        # decoder_input_idsがない場合は自動的に生成
-        # if 'decoder_input_ids' not in kwargs:
-        #     batch_size = kwargs['input_ids'].size(0)
-        #     kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
 
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
@@ -130,6 +126,9 @@ class LinearizedPreTrainedModel(PreTrainedModel):
             dparams,
         )
         return dp
+    
+    def generate(self, *args, **kwargs):
+        return super().generate(*args, **kwargs)
 
 class LinearizedModelWrapper(nn.Module):
     def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
