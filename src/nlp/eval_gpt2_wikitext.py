@@ -113,7 +113,7 @@ with torch.no_grad():
         outputs = model(**batch)
         # 損失をトークン数で重み付け
         labels = batch['labels']
-        shift_logits = outputs.logits[..., :-1, :].contiguous()
+        shift_logits = outputs[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
         loss_fct = torch.nn.CrossEntropyLoss(reduction='sum')
         loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
