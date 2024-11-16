@@ -77,7 +77,64 @@ def dict_params_to_tuple(dict_params: dict):
     return tuple(v for k, v in dict_params.items())
 
 
-class LinearizedPreTrainedModel(PreTrainedModel):
+# class LinearizedPreTrainedModel(PreTrainedModel):
+#     def __init__(self, config, original_model, params0_values):
+#         super().__init__(config)
+#         self.original_model = original_model
+#         self.params0_values = params0_values
+
+#     def tuple_params_to_dict(self, tuple_params):
+#         """
+#         Converts a tuple of parameters to a dictionary with keys corresponding to the parameter names.
+
+#         Args:
+#             tuple_params (Tuple[Tensor, ...]): A tuple of parameters.
+
+#         Returns:
+#             Dict[str, Tensor]: A dictionary with keys corresponding to the parameter names and values corresponding to the
+#             parameter values.
+#         """
+#         assert len(tuple_params) == len(self.params0_keys)
+#         state_dict = {}
+#         for k, p in zip(self.params0_keys, tuple_params):
+#             state_dict[k] = p
+#         return state_dict
+
+#     def forward(self, *args, **kwargs):
+#         params0 = tuple(self.params0_values)
+#         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+#         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+#         out, dp = jvp(
+#             lambda *param: functional_call(
+#                 self.original_model, self.tuple_params_to_dict(param), args, kwargs
+#             ),
+#             params0,
+#             dparams,
+#         )
+#         return out + dp
+    
+#     def dp(self, *args, **kwargs):
+
+#         params0 = tuple(self.params0_values)
+#         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+#         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+#         _, dp = jvp(
+#             lambda *param: functional_call(
+#                 self.original_model, self.tuple_params_to_dict(param), args, kwargs
+#             ),
+#             params0,
+#             dparams,
+#         )
+#         return dp
+
+#     def generate(self, **kwargs):
+#         if "input_ids" not in kwargs and "inputs" not in kwargs:
+#             raise ValueError("`input_ids` must be provided for generation.")
+#         if "input_ids" in kwargs:
+#             kwargs["inputs"] = kwargs.pop("input_ids")
+#         return super().generate(**kwargs)
+
+class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     def __init__(self, config, original_model, params0_values):
         super().__init__(config)
         self.original_model = original_model
@@ -126,22 +183,14 @@ class LinearizedPreTrainedModel(PreTrainedModel):
             dparams,
         )
         return dp
-    
-    # def generate(self, inputs=None, *args, **kwargs):
-    #     if inputs is None:
-    #         raise ValueError("`input_ids` must be provided for generation.")
         
-    #     if "inputs" in kwargs:
-    #         raise ValueError("`input_ids` must be passed as a positional argument.")
-        
-    #     # Ensure input_ids is passed explicitly to the generate method
-    #     return super().generate(inputs=inputs, *args, **kwargs)
     def generate(self, **kwargs):
         if "input_ids" not in kwargs and "inputs" not in kwargs:
             raise ValueError("`input_ids` must be provided for generation.")
         if "input_ids" in kwargs:
             kwargs["inputs"] = kwargs.pop("input_ids")
         return super().generate(**kwargs)
+
 
 class LinearizedModelWrapper(nn.Module):
     def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
