@@ -2,6 +2,9 @@ import torch
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from datasets import load_dataset
 import numpy as np
+import argparse
+import os
+from task_vectors import GPT2NonLinearTaskVector, GPT2LinearizedTaskVector
 
 arser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="gpt2")
@@ -41,9 +44,9 @@ finetuned_checkpoint = (
 
 try:
     task_vector = (
-        LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
+        GPT2LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
         if args.finetuning_mode == "linear" or args.finetuning_mode == "ours"
-        else NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
+        else GPT2NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
     )
 except FileNotFoundError:
     print(f"Error: Could not find {finetuned_checkpoint}.")
