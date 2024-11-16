@@ -151,7 +151,7 @@ class LinearizedModelWrapper(nn.Module):
         for p in self.params0_values:
             p.requires_grad_(False)
         self.linearized_model = LinearizedPreTrainedModel(
-            model.config, model, self.params0_values
+            model.model.config, model, self.params0_values
         )
 
     def forward(self, *args, **kwargs):
