@@ -159,8 +159,8 @@ def finetune(rank, args, group):
                     for batch in ddp_eval_loader:
                         input_ids = batch['input_ids'].to(device)
                         labels = input_ids.clone()
-                        labels[:, :-1] = input_ids[:, 1:]
-                        labels[:, -1] = -100
+                        labels[:, 0] = -100  # 最初のトークンを無視
+
                         data_time = time.time() - start_time
 
                         # モデルの出力を取得

@@ -101,20 +101,10 @@ data_collator = DataCollatorForLanguageModeling(
 
 eval_dataloader = DataLoader(lm_datasets, batch_size=args.eval_batch_size, collate_fn=data_collator)
 
-# if args.finetuning_mode == "none":
-#     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
-# elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear" or args.finetuning_mode == "ours":
-#     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=1.0)
-
-model = GPT2LMHeadModel.from_pretrained(finetuned_checkpoint)
-model.resize_token_embeddings(len(tokenizer))
-model = SimpleCallableHFModel(model)
-
-if args.finetuning_mode == "linear":
-    linearized_finetuning = True
-    model = LinearizedGPT2Wrapper(model)
-else:
-    linearized_finetuning = False
+if args.finetuning_mode == "none":
+    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
+elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear" or args.finetuning_mode == "ours":
+    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=1.0)
 
 model = model.to(device)
 model.eval()
