@@ -112,8 +112,7 @@ def finetune(rank, args, group):
 
             input_ids = batch['input_ids'].to(device)
             labels = input_ids.clone()
-            labels[:, :-1] = input_ids[:, 1:]
-            labels[:, -1] = -100
+            labels[:, 0] = -100
             data_time = time.time() - start_time
 
             # モデルの出力を取得
