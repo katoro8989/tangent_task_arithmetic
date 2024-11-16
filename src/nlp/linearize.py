@@ -152,6 +152,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.original_model = original_model
         self.params0_values = params0_values
         self.params0_keys = params0_keys
+
+        self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
         
     def tuple_params_to_dict(self, tuple_params):
         """
@@ -172,7 +174,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
 
     def forward(self, *args, **kwargs):
         params0 = tuple(self.params0_values)
-        params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+        params = self.params
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
         out, dp = jvp(
             lambda *param: functional_call(
@@ -234,7 +236,6 @@ class LinearizedT5Wrapper(nn.Module):
         return self.linearized_model(*args, **kwargs)
     
     def dp(self, *args, **kwargs):
-        decoder_input_idsがない場合は自動的に生成
         if 'decoder_input_ids' not in kwargs:
             batch_size = kwargs['input_ids'].size(0)
             kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
