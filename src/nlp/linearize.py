@@ -127,8 +127,12 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         )
         return dp
     
-    def generate(self, *args, **kwargs):
-        return super().generate(*args, **kwargs)
+    def generate(self, input_ids=None, *args, **kwargs):
+        if input_ids is None:
+            raise ValueError("`input_ids` must be provided for generation.")
+        
+        # Ensure input_ids is passed explicitly to the generate method
+        return super().generate(input_ids=input_ids, *args, **kwargs)
 
 class LinearizedModelWrapper(nn.Module):
     def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
@@ -164,12 +168,12 @@ class LinearizedModelWrapper(nn.Module):
 
         return self.linearized_model.dp(*args, **kwargs)
     
-    def generate(self, *args, **kwargs):
+    def generate(self,input_ids=None,  *args, **kwargs):
         """
         Generates sequences using the underlying `self.model`.
         Passes all arguments directly to the underlying model's `generate` method.
         """
-        return self.linearized_model.generate(*args, **kwargs)
+        return self.linearized_model.generate(input_ids=input_ids, *args, **kwargs)
 
     
 
