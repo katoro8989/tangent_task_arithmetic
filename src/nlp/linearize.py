@@ -211,7 +211,10 @@ class LinearizedModelWrapper(nn.Module):
         self.params0_values = nn.ParameterList([v for k, v in params0])
         for p in self.params0_values:
             p.requires_grad_(False)
-        self.linearized_model = LinearizedPreTrainedModel(
+        # self.linearized_model = LinearizedPreTrainedModel(
+        #     model.model.config, model.model, self.params0_values
+        # )
+        self.linearized_model = LinearizedGPT2LMHeadModel(
             model.model.config, model.model, self.params0_values
         )
 
