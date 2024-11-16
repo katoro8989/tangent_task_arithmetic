@@ -72,7 +72,7 @@ with torch.no_grad():
 
         input_ids = tokenizer(prefix, return_tensors="pt").input_ids.to(device)
         generated_ids = model.generate(
-            input_ids,
+            input_ids=input_ids,
             max_length=max_length,
             pad_token_id=tokenizer.eos_token_id, 
         )
