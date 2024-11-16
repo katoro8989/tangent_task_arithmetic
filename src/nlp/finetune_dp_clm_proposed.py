@@ -264,9 +264,9 @@ def finetune(rank, args, group):
             else os.path.join(ckpdir, "zeroshot")
         )
         ft_path = (
-            os.path.join(ckpdir, "linear_finetuned")
+            os.path.join(ckpdir, "linear_finetuned_1")
             if linearized_finetuning
-            else os.path.join(ckpdir, "finetuned")
+            else os.path.join(ckpdir, "finetuned_1")
         )
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
@@ -298,7 +298,7 @@ if __name__ == '__main__':
     parser.add_argument('--auto_find_batch_size', action='store_true')
     parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
-    parser.add_argument('--penalty', type=float, default=0.1)
+    parser.add_argument('--penalty', type=float, default=1)
     parser.add_argument('--penalty_iter', type=int, default=-1)
     parser.add_argument('--orth_batch_size', type=int, default=4)
     args = parser.parse_args()
