@@ -300,7 +300,7 @@ if __name__ == '__main__':
     parser.add_argument('--auto_find_batch_size', action='store_true')
     parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
-    parser.add_argument('--penalty', type=float, default=1)
+    parser.add_argument('--penalty', type=float, default=0.1)
     parser.add_argument('--penalty_iter', type=int, default=-1)
     parser.add_argument('--orth_batch_size', type=int, default=4)
     args = parser.parse_args()
