@@ -50,7 +50,6 @@ try:
     )
 except FileNotFoundError:
     print(f"Error: Could not find {finetuned_checkpoint}.")
-    continue
 
 if args.finetuning_mode == "none":
     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
