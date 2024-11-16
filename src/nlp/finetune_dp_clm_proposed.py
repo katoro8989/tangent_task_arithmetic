@@ -64,12 +64,11 @@ def finetune(rank, args, group):
     block_size = 1024
 
     def tokenize_function(examples):
-        return tokenizer(examples['text'])
+        return tokenizer(examples['text'], padding="max_length", truncation=True, max_length=128)
 
     tokenized_dataset = dataset.map(
         tokenize_function,
         batched=True,
-        num_proc=4,
         remove_columns=['text'],
     )
 
