@@ -140,7 +140,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.original_model = original_model
         self.params0_values = params0_values
         self.params0_keys = params0_keys
-        
+
     def tuple_params_to_dict(self, tuple_params):
         """
         Converts a tuple of parameters to a dictionary with keys corresponding to the parameter names.
@@ -216,7 +216,7 @@ class LinearizedModelWrapper(nn.Module):
         #     model.model.config, model.model, self.params0_values
         # )
         self.linearized_model = LinearizedGPT2LMHeadModel(
-            model.model.config, model.model, self.params0_values, self.params0_keys
+            model.config, model, self.params0_values, self.params0_keys
         )
 
     def forward(self, *args, **kwargs):
