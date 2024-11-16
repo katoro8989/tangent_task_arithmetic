@@ -163,8 +163,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             params0,
             dparams,
         )
-        # return out + dp
-        return CausalLMOutputWithPast(logits=out + dp)
+        return out + dp
+        # return CausalLMOutputWithPast(logits=out + dp)
     
     def dp(self, *args, **kwargs):
 

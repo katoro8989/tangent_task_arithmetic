@@ -223,6 +223,7 @@ def finetune(rank, args, group):
                         data_time = time.time() - start_time
 
                         # モデルの出力を取得
+
                         logits = ddp_model(input_ids=input_ids)
                         shift_logits = logits[..., :-1, :].contiguous()
                         shift_labels = labels[..., 1:].contiguous()
