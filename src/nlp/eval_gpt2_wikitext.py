@@ -1,5 +1,5 @@
 import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel
+from transformers import GPT2Tokenizer, GPT2LMHeadModel, DataCollatorForLanguageModeling
 from datasets import load_dataset
 import numpy as np
 import argparse
