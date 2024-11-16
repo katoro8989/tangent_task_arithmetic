@@ -159,11 +159,32 @@ class LinearizedModelWrapper(nn.Module):
     def generate(self, *args, **kwargs):
         """
         Generates sequences using the linearized model.
+
+        Args:
+            *args: Positional arguments passed to the model.
+            **kwargs: Keyword arguments that may include:
+                - input_ids (torch.Tensor): Initial token(s) to start generation.
+                - max_length (int): Maximum length of the generated sequence.
+                - temperature (float): Sampling temperature for softmax.
         """
+        # Retrieve required parameters from kwargs
+        input_ids = kwargs.pop('input_ids', None)
+        max_length = kwargs.pop('max_length', 50)
+        temperature = kwargs.pop('temperature', 1.0)
+
+        if input_ids is None:
+            raise ValueError("`input_ids` must be provided in `kwargs`")
+
+        # Ensure input_ids is a tensor
+        if not isinstance(input_ids, torch.Tensor):
+            raise ValueError("`input_ids` must be a torch.Tensor")
+
+        # Initial model parameters
         params0 = tuple(self.params0_values)
         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
 
+        # Clone the input for generation
         generated = input_ids.clone()
         past_key_values = None
 
