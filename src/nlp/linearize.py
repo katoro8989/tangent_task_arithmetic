@@ -176,6 +176,10 @@ class LinearizedModelWrapper(nn.Module):
         Generates sequences using the underlying `self.model`.
         Passes all arguments directly to the underlying model's `generate` method.
         """
+        
+        if "inputs" in kwargs:
+            raise ValueError("`input_ids` must be passed as a positional argument.")
+
         if inputs is None:
             raise ValueError("`inputs` must be provided.")
         return self.linearized_model.generate(inputs=inputs, *args, **kwargs)
