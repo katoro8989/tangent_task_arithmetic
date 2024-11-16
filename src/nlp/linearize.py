@@ -225,7 +225,7 @@ class LinearizedT5Wrapper(nn.Module):
         return self.linearized_model.generate(**kwargs)
 
 class LinearizedGPT2Wrapper(nn.Module):
-    def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
+    def __init__(self, model: SimpleCallableHFModel, init_model: SimpleCallableHFModel = None):
         """
         Initializes a linearized model.
 
