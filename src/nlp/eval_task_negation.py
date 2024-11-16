@@ -132,7 +132,7 @@ for scaling_coef in np.linspace(0.0, 1.0, 11):
     if scaling_coef == 0.0:
         original_perplexity = perplexity
     if scaling_coef != 0.0 and perplexity > original_perplexity + 0.5:
-        best_coef = scaling_coef
+        best_coef = scaling_coef - 0.1
         break
 
 print(f"Best scaling coef: {best_coef}")
