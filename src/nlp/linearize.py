@@ -153,7 +153,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.params0_values = params0_values
         self.params0_keys = params0_keys
 
-        self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
+        # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
+        self.params = nn.ParameterList([p.clone().detach().requires_grad_(True) for _, p in self.original_model.named_parameters()])
         
     def tuple_params_to_dict(self, tuple_params):
         """
