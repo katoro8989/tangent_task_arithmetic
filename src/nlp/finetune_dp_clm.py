@@ -125,11 +125,11 @@ def finetune(rank, args, group):
 
             loss.backward()
 
-            if (i + 1) % args.num_grad_accumulation == 0:
-                scheduler(iter)
-                optimizer.step()
-                iter += 1
-                optimizer.zero_grad()
+            # if (i + 1) % args.num_grad_accumulation == 0:
+            #     scheduler(iter)
+            #     optimizer.step()
+            #     iter += 1
+            #     optimizer.zero_grad()
 
             batch_time = time.time() - start_time
 
