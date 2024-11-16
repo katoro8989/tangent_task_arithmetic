@@ -217,7 +217,7 @@ def finetune(rank, args, group):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finetuning of T5')
     parser.add_argument('--model', type=str, default="gpt2")
-    parser.add_argument('--epochs', type=int, default=5)
+    parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--max_steps', type=int, default=0)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
