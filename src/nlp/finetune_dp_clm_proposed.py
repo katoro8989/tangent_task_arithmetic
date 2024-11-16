@@ -93,7 +93,6 @@ def finetune(rank, args, group):
         num_proc=4,
     )
 
-    # 空の入力を除去
     lm_datasets = lm_datasets.filter(lambda x: len(x['input_ids']) > 0)
 
     data_collator = DataCollatorForLanguageModeling(
@@ -120,7 +119,7 @@ def finetune(rank, args, group):
         output_device=rank,
     )
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     params = [p for p in ddp_model.parameters() if p.requires_grad]
     optimizer = torch.optim.AdamW(params, lr=args.lr, weight_decay=args.wd)
