@@ -4,9 +4,10 @@ from datasets import load_dataset
 import numpy as np
 import argparse
 import os
+from tqdm import tqdm
 from task_vectors import GPT2NonLinearTaskVector, GPT2LinearizedTaskVector
 
-arser = argparse.ArgumentParser(description='Finetuning of T5')
+parser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="gpt2")
 parser.add_argument('--eval_batch_size', type=int, default=8)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
@@ -66,7 +67,7 @@ def calculate_perplexity(model, tokenizer, dataset, stride=512, max_length=1024)
     total_length = 0
     
     with torch.no_grad():
-        for sample in dataset:
+        for sample in tqdm(dataset, desc="Calculating perplexity"):
             input_text = sample["text"]
             encodings = tokenizer(input_text, return_tensors="pt")
             input_ids = encodings.input_ids.to(device)
