@@ -128,6 +128,7 @@ for scaling_coef in np.linspace(0.0, 1.0, 11):
             total_tokens += shift_labels.numel()
 
     perplexity = math.exp(total_loss / total_tokens)
+    print(f"Perplexity at coef {scaling_coef}: {perplexity}")
     if scaling_coef == 0.0:
         original_perplexity = perplexity
     if scaling_coef != 0.0 and perplexity > original_perplexity + 0.5:
