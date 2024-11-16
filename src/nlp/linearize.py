@@ -156,7 +156,7 @@ class LinearizedModelWrapper(nn.Module):
         )
         return dp
 
-    def generate(self, input_ids, max_length=50, temperature=1.0, **kwargs):
+    def generate(self, *args, **kwargs):
         """
         Generates sequences using the linearized model.
         """
@@ -174,7 +174,8 @@ class LinearizedModelWrapper(nn.Module):
                     self.model,
                     self.tuple_params_to_dict(param),
                     (generated,),
-                    {"past_key_values": past_key_values, **kwargs},
+                    args,
+                    kwargs,
                 ),
                 params0,
                 dparams,
