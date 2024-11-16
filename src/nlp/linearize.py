@@ -8,7 +8,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from torch.func import functional_call, jvp
 
-from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer, PreTrainedModel
+from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer, PreTrainedModel, GPT2LMHeadModel
 
 
 
