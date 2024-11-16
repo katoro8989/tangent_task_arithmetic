@@ -52,7 +52,7 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
 
-    max_step = (len(encoded_dataset["train"]) // args.train_batch_size) * args.epochs
+    max_step = ((len(encoded_dataset["train"]) // args.train_batch_size) * args.epochs) // 2
     args.max_steps = max_step
 
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
@@ -159,8 +159,7 @@ def finetune(rank, args, group):
 
             input_ids = batch['input_ids'].to(device)
             labels = input_ids.clone()
-            labels[:, :-1] = input_ids[:, 1:]
-            labels[:, -1] = -100
+            labels[:, 0] = -100
             data_time = time.time() - start_time
 
             # モデルの出力を取得
@@ -220,8 +219,7 @@ def finetune(rank, args, group):
                     for batch in ddp_eval_loader:
                         input_ids = batch['input_ids'].to(device)
                         labels = input_ids.clone()
-                        labels[:, :-1] = input_ids[:, 1:]
-                        labels[:, -1] = -100
+                        labels[:, 0] = -100
                         data_time = time.time() - start_time
 
                         # モデルの出力を取得

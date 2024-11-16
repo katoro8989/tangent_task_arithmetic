@@ -52,7 +52,7 @@ def finetune(rank, args, group):
 
     encoded_dataset = load_from_disk("/mnt2/dataset/civil_comments")
 
-    max_step = (len(encoded_dataset["train"]) // args.train_batch_size) * args.epochs
+    max_step = ((len(encoded_dataset["train"]) // args.train_batch_size) * args.epochs) // 2
     args.max_steps = max_step
 
     train_dataloader = DataLoader(encoded_dataset["train"], batch_size=args.train_batch_size, shuffle=True, collate_fn=data_collator)
@@ -216,7 +216,7 @@ def finetune(rank, args, group):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Finetuning of T5')
     parser.add_argument('--model', type=str, default="gpt2")
-    parser.add_argument('--epochs', type=int, default=2.5)
+    parser.add_argument('--epochs', type=int, default=5)
     parser.add_argument('--max_steps', type=int, default=0)
     parser.add_argument('--num_grad_accumulation', type=int, default=1)
     parser.add_argument('--lr', type=float, default=1e-5)
