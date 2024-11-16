@@ -181,6 +181,12 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             params0,
             dparams,
         )
+        
+        #if dp is not zero raise
+        if torch.sum(dp.logits) > 0:
+            print(dp.logits)
+            raise ValueError("dp is not zero")
+
         return out.logits + dp.logits
         # return CausalLMOutputWithPast(logits=out + dp)
     
