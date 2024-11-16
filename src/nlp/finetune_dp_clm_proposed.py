@@ -100,7 +100,7 @@ def finetune(rank, args, group):
         mlm=False,
     )
 
-    train_dataloader_orth = DataLoader(lm_datasets, batch_size=args.eval_batch_size, shuffle=True, collate_fn=data_collator)
+    train_dataloader_orth = DataLoader(lm_datasets, batch_size=args.orth_batch_size, shuffle=True, collate_fn=data_collator)
     
     # Distribute the data and model across the GPUs.
     ddp_train_loader = distribute_loader(train_dataloader)
