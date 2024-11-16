@@ -140,7 +140,7 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         if "input_ids" not in kwargs and "inputs" not in kwargs:
             raise ValueError("`input_ids` must be provided for generation.")
         if "input_ids" in kwargs:
-            raise ValueError("`input_ids` must be passed as a positional argument to `generate`.")
+            kwargs["inputs"] = kwargs.pop("input_ids")
         return super().generate(**kwargs)
 
 class LinearizedModelWrapper(nn.Module):
