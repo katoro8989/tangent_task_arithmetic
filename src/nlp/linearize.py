@@ -137,6 +137,8 @@ class LinearizedPreTrainedModel(PreTrainedModel):
     #     # Ensure input_ids is passed explicitly to the generate method
     #     return super().generate(inputs=inputs, *args, **kwargs)
     def generate(self, **kwargs):
+        if "input_ids" not in kwargs and "inputs" not in kwargs:
+            raise ValueError("`input_ids` must be provided for generation.")
         return super().generate(**kwargs)
 
 class LinearizedModelWrapper(nn.Module):
