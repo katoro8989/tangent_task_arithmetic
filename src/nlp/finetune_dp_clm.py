@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import accuracy_score, matthews_corrcoef
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
-from linearize import LinearizedModelWrapper, SimpleCallableHFModel
+from linearize import LinearizedGPT2Wrapper, SimpleCallableHFModel
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from src.distributed import cleanup_ddp, distribute_loader, is_main_process, setup_ddp
@@ -45,7 +45,7 @@ def finetune(rank, args, group):
 
     if args.finetuning_mode == "linear":
         linearized_finetuning = True
-        model = LinearizedModelWrapper(model)
+        model = LinearizedGPT2Wrapper(model)
     else:
         linearized_finetuning = False
         
