@@ -4,6 +4,9 @@ from detoxify import Detoxify
 from tqdm import tqdm
 import argparse
 from task_vectors import GPT2NonLinearTaskVector, GPT2LinearizedTaskVector
+import os
+import numpy as np
+import torch
 
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
