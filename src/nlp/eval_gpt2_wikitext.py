@@ -6,6 +6,8 @@ import argparse
 import os
 from tqdm import tqdm
 from task_vectors import GPT2NonLinearTaskVector, GPT2LinearizedTaskVector
+from torch.utils.data import DataLoader
+import math
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="gpt2")
@@ -58,36 +60,65 @@ elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear" or a
     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-1.0)
 
 model = model.to(device)
+model.eval()
 
 dataset = load_dataset("wikitext", "wikitext-103-raw-v1", split="test")
 
-def calculate_perplexity(model, tokenizer, dataset, stride=512, max_length=1024):
-    model.eval()
-    total_loss = 0
-    total_length = 0
-    
-    with torch.no_grad():
-        for sample in tqdm(dataset, desc="Calculating perplexity"):
-            input_text = sample["text"]
-            encodings = tokenizer(input_text, return_tensors="pt")
-            input_ids = encodings.input_ids.to(device)
-            
-            for i in range(0, input_ids.size(1), stride):
-                input_slice = input_ids[:, i:i + max_length]
-                if input_slice.size(1) < max_length:
-                    break
-                
-                labels = input_slice.clone()
-                outputs = model(input_slice, labels=labels)
-                loss = outputs.loss
-                batch_loss = loss.item() * input_slice.size(1)
-                
-                total_loss += batch_loss
-                total_length += input_slice.size(1)
-    
-    avg_loss = total_loss / total_length
-    perplexity = np.exp(avg_loss)
-    return perplexity
+# トークナイズとデータのグループ化
+block_size = 1024
 
-perplexity = calculate_perplexity(model, tokenizer, dataset, stride=512, max_length=1024)
+def tokenize_function(examples):
+    return tokenizer(examples['text'])
+
+tokenized_dataset = dataset.map(
+    tokenize_function,
+    batched=True,
+    num_proc=4,
+    remove_columns=['text'],
+)
+
+def group_texts(examples):
+    concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
+    total_length = len(concatenated_examples['input_ids'])
+    if total_length >= block_size:
+        total_length = (total_length // block_size) * block_size
+    else:
+        return {'input_ids': [], 'attention_mask': []}
+
+    result = {
+        k: [t[i:i + block_size] for i in range(0, total_length, block_size)]
+        for k, t in concatenated_examples.items()
+    }
+    result['labels'] = result['input_ids'].copy()
+    return result
+
+lm_datasets = tokenized_dataset.map(
+    group_texts,
+    batched=True,
+    num_proc=4,
+)
+
+# 空の入力を除去
+lm_datasets = lm_datasets.filter(lambda x: len(x['input_ids']) > 0)
+
+eval_dataloader = DataLoader(lm_datasets, batch_size=args.eval_batch_size)
+
+# パープレキシティの計算
+total_loss = 0
+total_tokens = 0
+
+with torch.no_grad():
+    for batch in tqdm(eval_dataloader, desc="Calculating perplexity"):
+        batch = {k: torch.tensor(v).to(device) for k, v in batch.items()}
+        outputs = model(**batch)
+        # 損失をトークン数で重み付け
+        labels = batch['labels']
+        shift_logits = outputs.logits[..., :-1, :].contiguous()
+        shift_labels = labels[..., 1:].contiguous()
+        loss_fct = torch.nn.CrossEntropyLoss(reduction='sum')
+        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+        total_loss += loss.item()
+        total_tokens += shift_labels.numel()
+
+perplexity = math.exp(total_loss / total_tokens)
 print(f"Perplexity: {perplexity}")
