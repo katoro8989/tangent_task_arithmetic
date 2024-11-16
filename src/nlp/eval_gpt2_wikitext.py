@@ -109,7 +109,7 @@ total_tokens = 0
 
 with torch.no_grad():
     for batch in tqdm(eval_dataloader, desc="Calculating perplexity"):
-        batch = {k: torch.tensor(v).to(device) for k, v in batch.items()}
+        batch = {k: v.to(device) for k, v in batch.items()}
         outputs = model(**batch)
         # 損失をトークン数で重み付け
         labels = batch['labels']
