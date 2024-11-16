@@ -131,13 +131,8 @@ class _TaskVector(abc.ABC):
         return pretrained_model
 
 
-class NonLinearTaskVector(_TaskVector):
+class _NonLinearTaskVector(_TaskVector):
     """A task vector for nonlinear models."""
-
-    def _load_checkpoint(self, checkpoint):
-        """Load a checkpoint into a model."""
-        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
-        return SimpleCallableT5Model(hf_t5_model)
 
     def apply_to_nonlinear(self, pretrained_nonlinear_checkpoint, scaling_coef=1.0):
         """Apply a task vector to a nonlinear pretrained model."""
@@ -152,7 +147,13 @@ class NonLinearTaskVector(_TaskVector):
     def _cast_to_same_type(self, other):
         return linear_to_nonlinear(other, self.vector.keys())
 
-class GPT2NonLinearTaskVector(NonLinearTaskVector):
+class T5NonLinearTaskVector(_NonLinearTaskVector):
+    def _load_checkpoint(self, checkpoint):
+        """Load a checkpoint into a model."""
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
+        return SimpleCallableHFModel(hf_t5_model)
+
+class GPT2NonLinearTaskVector(_NonLinearTaskVector):
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
         hf_gpt2_model = GPT2LMHeadModel.from_pretrained(checkpoint)
@@ -160,13 +161,8 @@ class GPT2NonLinearTaskVector(NonLinearTaskVector):
         return SimpleCallableHFModel(hf_gpt2_model)
 
 
-class LinearizedTaskVector(_TaskVector):
+class _LinearizedTaskVector(_TaskVector):
     """A task vector for linearized models."""
-
-    def _load_checkpoint(self, checkpoint):
-        """Load a checkpoint into a model."""
-        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
-        return LinearizedModelWrapper(SimpleCallableT5Model(hf_t5_model))
 
     def apply_to_nonlinear(
         self, pretrained_nonlinear_checkpoint, param_names, scaling_coef=1.0
@@ -187,8 +183,14 @@ class LinearizedTaskVector(_TaskVector):
 
     def _cast_to_same_type(self, other):
         return nonlinear_to_linear(other)
+
+class T5LinearizedTaskVector(_LinearizedTaskVector):
+    def _load_checkpoint(self, checkpoint):
+        """Load a checkpoint into a model."""
+        hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
+        return LinearizedModelWrapper(SimpleCallableHFModel(hf_t5_model))
     
-class GPT2LinearizedTaskVector(LinearizedTaskVector):
+class GPT2LinearizedTaskVector(_LinearizedTaskVector):
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
         hf_gpt2_model = GPT2LMHeadModel.from_pretrained(checkpoint)
