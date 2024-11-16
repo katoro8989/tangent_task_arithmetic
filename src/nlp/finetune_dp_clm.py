@@ -97,7 +97,7 @@ def finetune(rank, args, group):
 
     print_every = 100
     max_steps = args.max_steps
-    iter = 0
+    iter = 1
 
     print("Starting training.")
     for epoch in range(args.epochs):
