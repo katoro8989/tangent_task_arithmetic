@@ -26,11 +26,9 @@ class _TaskVector(abc.ABC):
             with torch.no_grad():
                 pretrained_state_dict = self._load_checkpoint(
                     pretrained_checkpoint, 
-                    len_tokenizer, 
                 ).state_dict()
                 finetuned_state_dict = self._load_checkpoint(
                     finetuned_checkpoint, 
-                    len_tokenizer, 
                 ).state_dict()
                 self.vector = {}
                 for key in pretrained_state_dict:
