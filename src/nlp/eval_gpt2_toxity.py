@@ -6,7 +6,6 @@ import argparse
 from task_vectors import GPT2NonLinearTaskVector, GPT2LinearizedTaskVector
 import os
 import numpy as np
-import torch
 
 
 parser = argparse.ArgumentParser(description='Finetuning of T5')
@@ -29,7 +28,7 @@ else:
         args.save = f"/mnt2/gpt2_civil_checkpoints_{args.model}"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torh.cuda.set_device(args.device_number)
+torch.cuda.set_device(args.device_number)
 
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token
