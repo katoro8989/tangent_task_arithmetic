@@ -101,7 +101,12 @@ lm_datasets = tokenized_dataset.map(
 # 空の入力を除去
 lm_datasets = lm_datasets.filter(lambda x: len(x['input_ids']) > 0)
 
-eval_dataloader = DataLoader(lm_datasets, batch_size=args.eval_batch_size)
+data_collator = DataCollatorForLanguageModeling(
+    tokenizer=tokenizer,
+    mlm=False,
+)
+
+eval_dataloader = DataLoader(lm_datasets, batch_size=args.eval_batch_size, collate_fn=data_collator)
 
 # パープレキシティの計算
 total_loss = 0
