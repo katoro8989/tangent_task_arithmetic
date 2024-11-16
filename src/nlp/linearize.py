@@ -11,7 +11,25 @@ from torch.func import functional_call, jvp
 from transformers import Trainer, TrainingArguments, T5ForConditionalGeneration, T5Tokenizer, PreTrainedModel, GPT2LMHeadModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
+class SimpleCallableHFModel(nn.Module):
+    def __init__(self, model: PreTrainedModel):
+        super().__init__()
+        self.model = model
+    
+    def forward(self, *args, **kwargs):
+        # return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, decoder_input_ids=decoder_input_ids).logits
+        return self.model(*args, **kwargs).logits
 
+    def save_pretrained(self, path):
+        self.model.save_pretrained(path)
+    
+    def generate(self, *args, **kwargs):
+        """
+        Generates sequences using the underlying `self.model`.
+        Passes all arguments directly to the underlying model's `generate` method.
+        """
+        return self.model.generate(*args, **kwargs)
+        
 
 class LinearizedModel(nn.Module):
     """Creates a linearized version of a nn.Module.
@@ -259,22 +277,3 @@ class LinearizedGPT2Wrapper(nn.Module):
         return self.linearized_model.generate(**kwargs)
 
     
-
-class SimpleCallableHFModel(nn.Module):
-    def __init__(self, model: PreTrainedModel):
-        super().__init__()
-        self.model = model
-    
-    def forward(self, *args, **kwargs):
-        # return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, decoder_input_ids=decoder_input_ids).logits
-        return self.model(*args, **kwargs).logits
-
-    def save_pretrained(self, path):
-        self.model.save_pretrained(path)
-    
-    def generate(self, *args, **kwargs):
-        """
-        Generates sequences using the underlying `self.model`.
-        Passes all arguments directly to the underlying model's `generate` method.
-        """
-        return self.model.generate(*args, **kwargs)
