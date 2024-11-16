@@ -266,9 +266,9 @@ def finetune(rank, args, group):
             else os.path.join(ckpdir, "zeroshot")
         )
         ft_path = (
-            os.path.join(ckpdir, "linear_finetuned_1")
+            os.path.join(ckpdir, "linear_finetuned")
             if linearized_finetuning
-            else os.path.join(ckpdir, "finetuned_1")
+            else os.path.join(ckpdir, "finetuned")
         )
         ddp_model.module.model.save_pretrained(ft_path)
         return zs_path, ft_path
