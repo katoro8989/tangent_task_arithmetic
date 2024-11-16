@@ -245,7 +245,7 @@ class LinearizedGPT2Wrapper(nn.Module):
             p.requires_grad_(False)
 
         self.linearized_model = LinearizedGPT2LMHeadModel(
-            model.model.config, model, self.params0_values, self.params0_keys
+            model.model.config, model.model, self.params0_values, self.params0_keys
         )
 
     def forward(self, *args, **kwargs):
