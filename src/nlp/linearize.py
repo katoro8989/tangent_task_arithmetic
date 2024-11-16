@@ -139,6 +139,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         super().__init__(config)
         self.original_model = original_model
         self.params0_values = params0_values
+        self.params0_keys = [k for k, v in params0_values]
 
     def tuple_params_to_dict(self, tuple_params):
         """
