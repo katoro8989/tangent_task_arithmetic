@@ -195,7 +195,6 @@ class LinearizedModelWrapper(nn.Module):
                     self.model,
                     self.tuple_params_to_dict(param),
                     (generated,),
-                    args,
                     kwargs,
                 ),
                 params0,
