@@ -29,7 +29,7 @@ class SimpleCallableHFModel(nn.Module):
         Passes all arguments directly to the underlying model's `generate` method.
         """
         return self.model.generate(*args, **kwargs)
-        
+
 
 class LinearizedModel(nn.Module):
     """Creates a linearized version of a nn.Module.
@@ -257,6 +257,8 @@ class LinearizedGPT2Wrapper(nn.Module):
             init_model = model
         assert not hasattr(self, "params0")
         params0 = deepcopy([(k, v.detach()) for k, v in init_model.named_parameters()])
+        params0 = [(k[len('model.'):] if k.startswith('model.') else k, v) for k, v in params0]
+
         self.params0_keys = [k for k, v in params0]
         self.params0_values = nn.ParameterList([v for k, v in params0])
         for p in self.params0_values:
