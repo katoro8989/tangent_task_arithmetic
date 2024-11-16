@@ -118,6 +118,7 @@ def finetune(rank, args, group):
         find_unused_parameters=True,
         output_device=rank,
     )
+    model._set_static_graph()
 
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
