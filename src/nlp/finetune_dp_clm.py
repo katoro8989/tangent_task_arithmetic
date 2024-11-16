@@ -252,7 +252,7 @@ if __name__ == '__main__':
     
     print("*" * 100)
     print(f"Finetuning on Civil Comments")
-    for finetuning_mode in ["linear"]:
+    for finetuning_mode in ["standard"]:
         args.finetuning_mode = finetuning_mode
         print("*" * 100)
         print(f"Finetuning mode: {finetuning_mode}")
