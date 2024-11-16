@@ -78,62 +78,55 @@ def dict_params_to_tuple(dict_params: dict):
     return tuple(v for k, v in dict_params.items())
 
 
-# class LinearizedPreTrainedModel(PreTrainedModel):
-#     def __init__(self, config, original_model, params0_values):
-#         super().__init__(config)
-#         self.original_model = original_model
-#         self.params0_values = params0_values
+class LinearizedPreTrainedModel(PreTrainedModel):
+    def __init__(self, config, original_model, params0_values):
+        super().__init__(config)
+        self.original_model = original_model
+        self.params0_values = params0_values
 
-#     def tuple_params_to_dict(self, tuple_params):
-#         """
-#         Converts a tuple of parameters to a dictionary with keys corresponding to the parameter names.
+    def tuple_params_to_dict(self, tuple_params):
+        """
+        Converts a tuple of parameters to a dictionary with keys corresponding to the parameter names.
 
-#         Args:
-#             tuple_params (Tuple[Tensor, ...]): A tuple of parameters.
+        Args:
+            tuple_params (Tuple[Tensor, ...]): A tuple of parameters.
 
-#         Returns:
-#             Dict[str, Tensor]: A dictionary with keys corresponding to the parameter names and values corresponding to the
-#             parameter values.
-#         """
-#         assert len(tuple_params) == len(self.params0_keys)
-#         state_dict = {}
-#         for k, p in zip(self.params0_keys, tuple_params):
-#             state_dict[k] = p
-#         return state_dict
+        Returns:
+            Dict[str, Tensor]: A dictionary with keys corresponding to the parameter names and values corresponding to the
+            parameter values.
+        """
+        assert len(tuple_params) == len(self.params0_keys)
+        state_dict = {}
+        for k, p in zip(self.params0_keys, tuple_params):
+            state_dict[k] = p
+        return state_dict
 
-#     def forward(self, *args, **kwargs):
-#         params0 = tuple(self.params0_values)
-#         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
-#         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-#         out, dp = jvp(
-#             lambda *param: functional_call(
-#                 self.original_model, self.tuple_params_to_dict(param), args, kwargs
-#             ),
-#             params0,
-#             dparams,
-#         )
-#         return out + dp
+    def forward(self, *args, **kwargs):
+        params0 = tuple(self.params0_values)
+        params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+        dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+        out, dp = jvp(
+            lambda *param: functional_call(
+                self.original_model, self.tuple_params_to_dict(param), args, kwargs
+            ),
+            params0,
+            dparams,
+        )
+        return out + dp
     
-#     def dp(self, *args, **kwargs):
+    def dp(self, *args, **kwargs):
 
-#         params0 = tuple(self.params0_values)
-#         params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
-#         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-#         _, dp = jvp(
-#             lambda *param: functional_call(
-#                 self.original_model, self.tuple_params_to_dict(param), args, kwargs
-#             ),
-#             params0,
-#             dparams,
-#         )
-#         return dp
-
-#     def generate(self, **kwargs):
-#         if "input_ids" not in kwargs and "inputs" not in kwargs:
-#             raise ValueError("`input_ids` must be provided for generation.")
-#         if "input_ids" in kwargs:
-#             kwargs["inputs"] = kwargs.pop("input_ids")
-#         return super().generate(**kwargs)
+        params0 = tuple(self.params0_values)
+        params = dict_params_to_tuple(OrderedDict(self.named_parameters()))
+        dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+        _, dp = jvp(
+            lambda *param: functional_call(
+                self.original_model, self.tuple_params_to_dict(param), args, kwargs
+            ),
+            params0,
+            dparams,
+        )
+        return dp
 
 class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     def __init__(self, config, original_model, params0_values, params0_keys):
@@ -194,8 +187,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             kwargs["inputs"] = kwargs.pop("input_ids")
         return super().generate(**kwargs)
 
-
-class LinearizedModelWrapper(nn.Module):
+class LinearizedT5Wrapper(nn.Module):
     def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
         """
         Initializes a linearized model.
@@ -214,9 +206,44 @@ class LinearizedModelWrapper(nn.Module):
         self.params0_values = nn.ParameterList([v for k, v in params0])
         for p in self.params0_values:
             p.requires_grad_(False)
-        # self.linearized_model = LinearizedPreTrainedModel(
-        #     model.model.config, model.model, self.params0_values
-        # )
+        self.linearized_model = LinearizedPreTrainedModel(
+            model.model.config, model.model, self.params0_values
+        )
+
+    def forward(self, *args, **kwargs):
+        return self.linearized_model(*args, **kwargs)
+    
+    def dp(self, *args, **kwargs):
+        decoder_input_idsがない場合は自動的に生成
+        if 'decoder_input_ids' not in kwargs:
+            batch_size = kwargs['input_ids'].size(0)
+            kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
+
+        return self.linearized_model.dp(*args, **kwargs)
+    
+    def generate(self, **kwargs):
+        return self.linearized_model.generate(**kwargs)
+
+class LinearizedGPT2Wrapper(nn.Module):
+    def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
+        """
+        Initializes a linearized model.
+
+        Args:
+            model (nn.Module): The underlying PyTorch model to be linearized.
+            init_model (nn.Module): The initial PyTorch model used to compute the linearization parameters (default: None).
+        """
+        super().__init__()
+        self.model = model
+        if init_model is None:
+            init_model = model
+        assert not hasattr(self, "params0")
+        params0 = deepcopy([(k, v.detach()) for k, v in init_model.named_parameters()])
+        self.params0_keys = [k for k, v in params0]
+        self.params0_values = nn.ParameterList([v for k, v in params0])
+        for p in self.params0_values:
+            p.requires_grad_(False)
+
         self.linearized_model = LinearizedGPT2LMHeadModel(
             model.model.config, model, self.params0_values, self.params0_keys
         )
@@ -225,11 +252,7 @@ class LinearizedModelWrapper(nn.Module):
         return self.linearized_model(*args, **kwargs)
     
     def dp(self, *args, **kwargs):
-        # decoder_input_idsがない場合は自動的に生成
-        # if 'decoder_input_ids' not in kwargs:
-        #     batch_size = kwargs['input_ids'].size(0)
-        #     kwargs['decoder_input_ids'] = torch.zeros((batch_size, 1), dtype=torch.long, device=kwargs['input_ids'].device)
-
+        
         return self.linearized_model.dp(*args, **kwargs)
     
     def generate(self, **kwargs):

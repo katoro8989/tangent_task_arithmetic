@@ -3,7 +3,7 @@ import abc
 import torch
 
 from transformers import T5ForConditionalGeneration, GPT2LMHeadModel
-from linearize import LinearizedModelWrapper, SimpleCallableHFModel
+from linearize import LinearizedGPT2Wrapper, LinearizedT5Wrapper, SimpleCallableHFModel
 
 
 class _TaskVector(abc.ABC):
@@ -188,14 +188,14 @@ class T5LinearizedTaskVector(_LinearizedTaskVector):
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
         hf_t5_model = T5ForConditionalGeneration.from_pretrained(checkpoint)
-        return LinearizedModelWrapper(SimpleCallableHFModel(hf_t5_model))
+        return LinearizedT5Wrapper(SimpleCallableHFModel(hf_t5_model))
     
 class GPT2LinearizedTaskVector(_LinearizedTaskVector):
     def _load_checkpoint(self, checkpoint):
         """Load a checkpoint into a model."""
         hf_gpt2_model = GPT2LMHeadModel.from_pretrained(checkpoint)
         hf_gpt2_model.resize_token_embeddings(self.len_tokenizer)
-        return LinearizedModelWrapper(SimpleCallableHFModel(hf_gpt2_model))
+        return LinearizedGPT2Wrapper(SimpleCallableHFModel(hf_gpt2_model))
 
 
 def nonlinear_to_linear(nonlinear_task_vector):

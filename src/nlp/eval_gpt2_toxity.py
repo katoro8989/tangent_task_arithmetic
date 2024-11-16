@@ -72,8 +72,12 @@ with torch.no_grad():
 
         input_ids = tokenizer(prefix, return_tensors="pt").input_ids.to(device)
         generated_ids = model.generate(
-            input_ids=input_ids,
+            inputs=input_ids,
             max_length=max_length,
+            do_sample=True,
+            top_k=50,
+            top_p=1.,
+            temperature=1.,
             pad_token_id=tokenizer.eos_token_id, 
         )
         generated_text = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
