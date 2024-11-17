@@ -163,7 +163,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.params = [param for _, param in params]
 
         device = next(self.original_model.parameters()).device
-        self.params0_values = [p.to(device) for p in self.params0_values]
+        self.params0_values = [p.to("cuda") for p in self.params0_values]
         # super().__init__(config)
         # self.original_model = original_model
         # self.params0_values = params0_values
