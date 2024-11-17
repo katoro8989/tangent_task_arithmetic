@@ -281,7 +281,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
                 params0,
                 dparams,
             )
-            dp_norms = torch.norm(dp_penalty, dim=-1)
+            dp_norms = torch.norm(dp, dim=-1)
             penalty = dp_norms.mean()
 
         return out, penalty
