@@ -285,7 +285,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         #     penalty = dp_norms.mean()
 
         # return out + dp, penalty
-        return CausalLMOutputWithPast(logits=out + dp), penalty
+        return CausalLMOutputWithPast(logits=out + dp)
     
     def dp(self, *args, **kwargs):
 
