@@ -165,7 +165,7 @@ def finetune(rank, args, group):
             data_time = time.time() - start_time
 
             # モデルの出力を取得
-            out, dp = ddp_model(input_ids=input_ids, use_cache=False)
+            out, dp = ddp_model(input_ids=input_ids)
             logits = out + dp
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
@@ -182,7 +182,7 @@ def finetune(rank, args, group):
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
                 # tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth)
-                out, dp = ddp_model(input_ids=inputs_to_orth, use_cache=False)
+                out, dp = ddp_model(input_ids=inputs_to_orth)
                 tau_jacob = dp
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()

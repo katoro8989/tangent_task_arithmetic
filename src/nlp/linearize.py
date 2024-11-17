@@ -154,7 +154,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.params0_keys = params0_keys
 
         # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
-        self.params = nn.ParameterList([p.clone().detach().requires_grad_(True) for _, p in self.original_model.named_parameters()])
+        # self.params = list(self.original_model.parameters())
         
     def tuple_params_to_dict(self, tuple_params):
         """
@@ -175,7 +175,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
 
     def forward(self, *args, **kwargs):
         params0 = tuple(self.params0_values)
-        params = self.params
+        params = tuple(self.original_model.parameters())
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
         out, dp = jvp(
             lambda *param: functional_call(
