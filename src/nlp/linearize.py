@@ -191,23 +191,17 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     #     # return CausalLMOutputWithPast(logits=out.logits + dp.logits)
     def forward(self, input_ids=None, compute_penalty=False, penalty_input_ids=None, **kwargs):
         params0 = tuple(self.params0_values)
-        params = tuple(self.params)
+        # params = tuple(self.original_model.parameters())
+        params = self.params
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
-
-        def model_forward(*param_values):
-            param_dict = self.tuple_params_to_dict(param_values)
-            outputs = functional_call(
-                self.original_model, param_dict, input_ids=input_ids, **kwargs
-            )
-            return outputs.logits
-
-        # メインの出力を計算
         out, dp = jvp(
-            model_forward,
-            (params0,),
-            (dparams,),
+            lambda *param: functional_call(
+                self.original_model, self.tuple_params_to_dict(param), args, kwargs
+            ),
+            params0,
+            dparams,
         )
-
+        
         # ペナルティの計算
         penalty = None
         if compute_penalty and penalty_input_ids is not None:
