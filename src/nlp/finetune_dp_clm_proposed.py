@@ -158,40 +158,73 @@ def finetune(rank, args, group):
                 i // args.num_grad_accumulation
                 + epoch * num_batches // args.num_grad_accumulation
             )
-
             input_ids = batch['input_ids'].to(device)
             labels = input_ids.clone()
             labels[:, 0] = -100
-            data_time = time.time() - start_time
 
-            # モデルの出力を取得
-            logits = ddp_model(input_ids=input_ids)
-            # out, dp = ddp_model(input_ids=input_ids)
-            # logits = out + dp
-            shift_logits = logits[..., :-1, :].contiguous()
-            shift_labels = labels[..., 1:].contiguous()
+            # ペナルティ計算を行うかどうか
+            compute_penalty = iter_step > args.penalty_iter
+            penalty_input_ids = None
 
-            loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-
-            penalty = torch.tensor(0, device=device)
-            if iter_step > args.penalty_iter:
+            if compute_penalty:
                 try:
                     batch_to_orth = next(ddp_train_loader_iter_orth)
                 except StopIteration:
                     ddp_train_loader_iter_orth = iter(ddp_train_loader_orth)
                     batch_to_orth = next(ddp_train_loader_iter_orth)
 
-                inputs_to_orth = batch_to_orth["input_ids"].to(device)
-                tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth)
-                # out, dp = ddp_model(input_ids=inputs_to_orth)
-                # tau_jacob = dp
-                dp_norms = torch.norm(tau_jacob, dim=1)
-                penalty = dp_norms.mean()
-            
-            # loss += args.penalty * penalty
+                penalty_input_ids = batch_to_orth["input_ids"].to(device)
 
+            # モデルの出力とペナルティを取得
+            logits, penalty = ddp_model(
+                input_ids=input_ids,
+                compute_penalty=compute_penalty,
+                penalty_input_ids=penalty_input_ids
+            )
+
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+
+            loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
+            if compute_penalty and penalty is not None:
+                loss += args.penalty * penalty
 
             loss.backward()
+
+            # input_ids = batch['input_ids'].to(device)
+            # labels = input_ids.clone()
+            # labels[:, 0] = -100
+            # data_time = time.time() - start_time
+
+            # # モデルの出力を取得
+            # logits = ddp_model(input_ids=input_ids)
+            # # out, dp = ddp_model(input_ids=input_ids)
+            # # logits = out + dp
+            # shift_logits = logits[..., :-1, :].contiguous()
+            # shift_labels = labels[..., 1:].contiguous()
+
+            # loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+
+            # penalty = torch.tensor(0, device=device)
+            # if iter_step > args.penalty_iter:
+            #     try:
+            #         batch_to_orth = next(ddp_train_loader_iter_orth)
+            #     except StopIteration:
+            #         ddp_train_loader_iter_orth = iter(ddp_train_loader_orth)
+            #         batch_to_orth = next(ddp_train_loader_iter_orth)
+
+            #     inputs_to_orth = batch_to_orth["input_ids"].to(device)
+            #     tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth)
+            #     # out, dp = ddp_model(input_ids=inputs_to_orth)
+            #     # tau_jacob = dp
+            #     dp_norms = torch.norm(tau_jacob, dim=1)
+            #     penalty = dp_norms.mean()
+            
+            # # loss += args.penalty * penalty
+
+
+            # loss.backward()
 
             if (i + 1) % args.num_grad_accumulation == 0:
                 scheduler(iter_step)
@@ -232,7 +265,7 @@ def finetune(rank, args, group):
 
                         # モデルの出力を取得
 
-                        logits = ddp_model(input_ids=input_ids)
+                        logits, _= ddp_model(input_ids=input_ids, compute_penalty=False,)
                         # out, dp = ddp_model(input_ids=input_ids)
                         # logits = out + dp
                         shift_logits = logits[..., :-1, :].contiguous()
