@@ -117,7 +117,7 @@ for scaling_coef in np.linspace(0.0, 1.0, 11):
     with torch.no_grad():
         for batch in tqdm(eval_dataloader, desc="Calculating perplexity"):
             batch = {k: v.to(device) for k, v in batch.items()}
-            outputs = model(**batch)
+            outputs, _ = model(**batch)
             # 損失をトークン数で重み付け
             labels = batch['labels']
             shift_logits = outputs[..., :-1, :].contiguous()
