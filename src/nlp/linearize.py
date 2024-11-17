@@ -210,6 +210,9 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         params = tuple(self.params)
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
 
+        print(len(params0))
+        print(len(params))
+
         def model_forward(*param_values):
             param_dict = self.tuple_params_to_dict(param_values)
             outputs = functional_call(
