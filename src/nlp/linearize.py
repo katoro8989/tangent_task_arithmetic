@@ -210,9 +210,6 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         params = tuple(self.params)
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
 
-        print(len(params0))
-        print(len(params))
-
         def model_forward(*param_values):
             param_dict = self.tuple_params_to_dict(param_values)
             outputs = functional_call(
@@ -223,8 +220,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         # メインの出力を計算
         out, dp = jvp(
             model_forward,
-            (params0,),
-            (dparams,),
+            params0,
+            dparams,
         )
 
         # ペナルティの計算
@@ -239,8 +236,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
 
             _, dp_penalty = jvp(
                 penalty_forward,
-                (params0,),
-                (dparams,),
+                params0,
+                dparams,
             )
             dp_norms = torch.norm(dp_penalty, dim=-1)
             penalty = dp_norms.mean()
