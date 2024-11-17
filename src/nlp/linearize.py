@@ -255,7 +255,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             dparams,
         )
 
-        ペナルティの計算
+        # ペナルティの計算
         penalty = None
         if compute_penalty and penalty_input_ids is not None:
             def penalty_forward(*param_values):
