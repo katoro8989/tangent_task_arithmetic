@@ -226,7 +226,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     #     return out.logits + dp.logits
     #     # return CausalLMOutputWithPast(logits=out.logits + dp.logits)
     def forward(self, input_ids=None, compute_penalty=False, penalty_input_ids=None, **kwargs):
-        params0 = tuple(self.params0_values)
+        # params0 = tuple(self.params0_values)
+        params0 = tuple(getattr(self, f"params0_{name.replace('.', '_')}") for name in self.params0_keys)
         params = tuple(self.params)
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
 
