@@ -148,13 +148,25 @@ class LinearizedPreTrainedModel(PreTrainedModel):
 
 class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     def __init__(self, config, original_model, params0_values, params0_keys):
-        super().__init__(config)
+        super().__init__()
         self.original_model = original_model
-        self.params0_values = params0_values
-        self.params0_keys = params0_keys
 
-        # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
-        self.params = list(self.original_model.parameters())
+        # モデルのパラメータ名と値を取得
+        params = list(self.original_model.named_parameters())
+        self.params0_keys = [name for name, _ in params]
+        self.params0_values = [param.clone().detach() for _, param in params]
+        for p in self.params0_values:
+            p.requires_grad = False
+
+        # モデルの現在のパラメータを取得
+        self.params = [param for _, param in params]
+        # super().__init__(config)
+        # self.original_model = original_model
+        # self.params0_values = params0_values
+        # self.params0_keys = params0_keys
+
+        # # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
+        # self.params = list(self.original_model.parameters())
         
     def tuple_params_to_dict(self, tuple_params):
         """
