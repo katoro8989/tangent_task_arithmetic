@@ -146,6 +146,8 @@ def finetune(rank, args, group):
     max_steps = args.max_steps
     iter_step = 0
 
+    torch.autograd.set_detect_anomaly(True)
+
     print("Starting training.")
     for epoch in range(args.epochs):
         ddp_model.train()
@@ -179,7 +181,8 @@ def finetune(rank, args, group):
                     batch_to_orth = next(ddp_train_loader_iter_orth)
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
-                _, dp = ddp_model(input_ids=inputs_to_orth)
+                # tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth)
+                out, dp = ddp_model(input_ids=inputs_to_orth)
                 tau_jacob = dp
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()
@@ -228,6 +231,7 @@ def finetune(rank, args, group):
 
                         # モデルの出力を取得
 
+                        # logits = ddp_model(input_ids=input_ids)
                         out, dp = ddp_model(input_ids=input_ids)
                         logits = out + dp
                         shift_logits = logits[..., :-1, :].contiguous()
