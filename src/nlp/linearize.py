@@ -152,18 +152,32 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         super().__init__(original_model.config)
         self.original_model = original_model
 
+        # # モデルのパラメータ名と値を取得
+        # params = list(self.original_model.named_parameters())
+        # self.params0_keys = [name for name, _ in params]
+        # self.params0_values = [param.clone().detach() for _, param in params]
+        # for p in self.params0_values:
+        #     p.requires_grad = False
+
+        # # モデルの現在のパラメータを取得
+        # self.params = [param for _, param in params]
+
+        # device = next(self.original_model.parameters()).device
+        # self.params0_values = [p.to("cuda") for p in self.params0_values]
+
         # モデルのパラメータ名と値を取得
         params = list(self.original_model.named_parameters())
         self.params0_keys = [name for name, _ in params]
-        self.params0_values = [param.clone().detach() for _, param in params]
-        for p in self.params0_values:
-            p.requires_grad = False
+
+        # 初期パラメータをバッファとして登録
+        device = next(self.original_model.parameters()).device
+        for name, param in params:
+            buffer_name = f"params0_{name.replace('.', '_')}"
+            self.register_buffer(buffer_name, param.clone().detach().to(device))
 
         # モデルの現在のパラメータを取得
         self.params = [param for _, param in params]
 
-        device = next(self.original_model.parameters()).device
-        self.params0_values = [p.to("cuda") for p in self.params0_values]
         # super().__init__(config)
         # self.original_model = original_model
         # self.params0_values = params0_values
@@ -183,10 +197,16 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             Dict[str, Tensor]: A dictionary with keys corresponding to the parameter names and values corresponding to the
             parameter values.
         """
-        assert len(tuple_params) == len(self.params0_keys)
+        # assert len(tuple_params) == len(self.params0_keys)
+        # state_dict = {}
+        # for k, p in zip(self.params0_keys, tuple_params):
+        #     state_dict[k] = p
+        # return state_dict
+        assert len(tuple_params) == len(self.params0_keys), f"len(tuple_params)={len(tuple_params)} != len(self.params0_keys)={len(self.params0_keys)}"
         state_dict = {}
         for k, p in zip(self.params0_keys, tuple_params):
-            state_dict[k] = p
+            buffer_name = f"params0_{k.replace('.', '_')}"
+            state_dict[k] = getattr(self, buffer_name)
         return state_dict
 
     # def forward(self, *args, **kwargs):
