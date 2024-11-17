@@ -153,8 +153,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         self.params0_values = params0_values
         self.params0_keys = params0_keys
 
-        self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
-        # self.params = list(self.original_model.parameters())
+        # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
+        self.params = list(self.original_model.parameters())
         
     def tuple_params_to_dict(self, tuple_params):
         """
@@ -191,17 +191,23 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     #     # return CausalLMOutputWithPast(logits=out.logits + dp.logits)
     def forward(self, input_ids=None, compute_penalty=False, penalty_input_ids=None, **kwargs):
         params0 = tuple(self.params0_values)
-        # params = tuple(self.original_model.parameters())
-        params = self.params
+        params = tuple(self.params)
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+
+        def model_forward(*param_values):
+            param_dict = self.tuple_params_to_dict(param_values)
+            outputs = functional_call(
+                self.original_model, param_dict, input_ids=input_ids, **kwargs
+            )
+            return outputs.logits
+
+        # メインの出力を計算
         out, dp = jvp(
-            lambda *param: functional_call(
-                self.original_model, self.tuple_params_to_dict(param), args, kwargs
-            ),
-            params0,
-            dparams,
+            model_forward,
+            (params0,),
+            (dparams,),
         )
-        
+
         # ペナルティの計算
         penalty = None
         if compute_penalty and penalty_input_ids is not None:
