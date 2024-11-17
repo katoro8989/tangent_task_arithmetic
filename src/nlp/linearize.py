@@ -147,23 +147,23 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         return dp
 
 class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
-    def __init__(self, config, original_model, params0_values, params0_keys):
-    # def __init__(self, original_model):
+    # def __init__(self, config, original_model, params0_values, params0_keys):
+    def __init__(self, original_model):
         super().__init__(config)
         self.original_model = original_model
 
-        # # モデルのパラメータ名と値を取得
-        # params = list(self.original_model.named_parameters())
-        # self.params0_keys = [name for name, _ in params]
-        # self.params0_values = [param.clone().detach() for _, param in params]
-        # for p in self.params0_values:
-        #     p.requires_grad = False
+        # モデルのパラメータ名と値を取得
+        params = list(self.original_model.named_parameters())
+        self.params0_keys = [name for name, _ in params]
+        self.params0_values = [param.clone().detach() for _, param in params]
+        for p in self.params0_values:
+            p.requires_grad = False
 
-        # # モデルの現在のパラメータを取得
-        # self.params = [param for _, param in params]
+        # モデルの現在のパラメータを取得
+        self.params = [param for _, param in params]
 
-        # device = next(self.original_model.parameters()).device
-        # self.params0_values = [p.to("cuda") for p in self.params0_values]
+        device = next(self.original_model.parameters()).device
+        self.params0_values = [p.to(device) for p in self.params0_values]
 
         # モデルのパラメータ名と値を取得
         # params = list(self.original_model.named_parameters())
@@ -178,10 +178,10 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         # # モデルの現在のパラメータを取得
         # self.params = [param for _, param in params]
 
-        self.params0_values = params0_values
-        self.params0_keys = params0_keys
+        # self.params0_values = params0_values
+        # self.params0_keys = params0_keys
 
-        self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
+        # self.params = nn.ParameterList([p for _, p in self.original_model.named_parameters()])
         # self.params = list(self.original_model.parameters())
         
     def tuple_params_to_dict(self, tuple_params):
@@ -224,14 +224,14 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     #     return out.logits + dp.logits
     #     # return CausalLMOutputWithPast(logits=out.logits + dp.logits)
     def forward(self, input_ids=None, compute_penalty=False, penalty_input_ids=None, **kwargs):
-        # # params0 = tuple(self.params0_values)
-        # params0 = tuple(getattr(self, f"params0_{name.replace('.', '_')}") for name in self.params0_keys)
-        # params = tuple(self.params)
-        # dparams = tuple(p - p0 for p, p0 in zip(params, params0))
         params0 = tuple(self.params0_values)
-        # params = tuple(self.original_model.parameters())
-        params = self.params
+        # params0 = tuple(getattr(self, f"params0_{name.replace('.', '_')}") for name in self.params0_keys)
+        params = tuple(self.params)
         dparams = tuple(p - p0 for p, p0 in zip(params, params0))
+        # params0 = tuple(self.params0_values)
+        # # params = tuple(self.original_model.parameters())
+        # params = self.params
+        # dparams = tuple(p - p0 for p, p0 in zip(params, params0))
 
         out, dp = jvp(
             lambda *param: functional_call(
@@ -241,48 +241,48 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             dparams,
         )
 
-        # def model_forward(*param_values):
-        #     param_dict = self.tuple_params_to_dict(param_values)
-        #     outputs = functional_call(
-        #         self.original_model, param_dict, args=(), kwargs={'input_ids': input_ids, **kwargs}
-        #     )
-        #     return outputs.logits
+        def model_forward(*param_values):
+            param_dict = self.tuple_params_to_dict(param_values)
+            outputs = functional_call(
+                self.original_model, param_dict, args=(), kwargs={'input_ids': input_ids, **kwargs}
+            )
+            return outputs.logits
 
-        # # メインの出力を計算
-        # out, dp = jvp(
-        #     model_forward,
-        #     params0,
-        #     dparams,
-        # )
+        # メインの出力を計算
+        out, dp = jvp(
+            model_forward,
+            params0,
+            dparams,
+        )
 
-        # ペナルティの計算
-        # penalty = None
-        # if compute_penalty and penalty_input_ids is not None:
-        #     def penalty_forward(*param_values):
-        #         param_dict = self.tuple_params_to_dict(param_values)
-        #         outputs = functional_call(
-        #             self.original_model, param_dict, args=(), kwargs={'input_ids': penalty_input_ids, **kwargs}
-        #         )
-        #         return outputs.logits
-
-        #     _, dp_penalty = jvp(
-        #         penalty_forward,
-        #         params0,
-        #         dparams,
-        #     )
-        #     dp_norms = torch.norm(dp_penalty, dim=-1)
-        #     penalty = dp_norms.mean()
+        ペナルティの計算
         penalty = None
         if compute_penalty and penalty_input_ids is not None:
-            out, dp = jvp(
-                lambda *param: functional_call(
-                    self.original_model, self.tuple_params_to_dict(param), args=(), kwargs={'input_ids': penalty_input_ids, **kwargs}
-                ),
+            def penalty_forward(*param_values):
+                param_dict = self.tuple_params_to_dict(param_values)
+                outputs = functional_call(
+                    self.original_model, param_dict, args=(), kwargs={'input_ids': penalty_input_ids, **kwargs}
+                )
+                return outputs.logits
+
+            _, dp_penalty = jvp(
+                penalty_forward,
                 params0,
                 dparams,
             )
-            dp_norms = torch.norm(dp.logits, dim=-1)
+            dp_norms = torch.norm(dp_penalty, dim=-1)
             penalty = dp_norms.mean()
+        # penalty = None
+        # if compute_penalty and penalty_input_ids is not None:
+        #     out, dp = jvp(
+        #         lambda *param: functional_call(
+        #             self.original_model, self.tuple_params_to_dict(param), args=(), kwargs={'input_ids': penalty_input_ids, **kwargs}
+        #         ),
+        #         params0,
+        #         dparams,
+        #     )
+        #     dp_norms = torch.norm(dp.logits, dim=-1)
+        #     penalty = dp_norms.mean()
 
         return out.logits + dp.logits, penalty
     
@@ -365,12 +365,12 @@ class LinearizedGPT2Wrapper(nn.Module):
         for p in self.params0_values:
             p.requires_grad_(False)
 
-        self.linearized_model = LinearizedGPT2LMHeadModel(
-            model.model.config, model.model, self.params0_values, self.params0_keys
-        )
         # self.linearized_model = LinearizedGPT2LMHeadModel(
-        #     model.model
+        #     model.model.config, model.model, self.params0_values, self.params0_keys
         # )
+        self.linearized_model = LinearizedGPT2LMHeadModel(
+            model.model
+        )
 
     # def forward(self, *args, **kwargs):
     #     return self.linearized_model(*args, **kwargs)
