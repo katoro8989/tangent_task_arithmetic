@@ -146,7 +146,6 @@ def finetune(rank, args, group):
     max_steps = args.max_steps
     iter_step = 0
 
-    torch.autograd.set_detect_anomaly(True)
 
     print("Starting training.")
     for epoch in range(args.epochs):
@@ -161,8 +160,8 @@ def finetune(rank, args, group):
             input_ids = batch['input_ids'].to(device)
             labels = input_ids.clone()
             labels[:, 0] = -100
+            data_time = time.time() - start_time
 
-            # ペナルティ計算を行うかどうか
             compute_penalty = iter_step > args.penalty_iter
             penalty_input_ids = None
 
