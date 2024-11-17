@@ -149,7 +149,7 @@ class LinearizedPreTrainedModel(PreTrainedModel):
 class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
     # def __init__(self, config, original_model, params0_values, params0_keys):
     def __init__(self, original_model):
-        super().__init__(config)
+        super().__init__(original_model.config)
         self.original_model = original_model
 
         # モデルのパラメータ名と値を取得
