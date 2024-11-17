@@ -147,7 +147,8 @@ class LinearizedPreTrainedModel(PreTrainedModel):
         return dp
 
 class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
-    def __init__(self, config, original_model, params0_values, params0_keys):
+    # def __init__(self, config, original_model, params0_values, params0_keys):
+    def __init__(self, original_model):
         super().__init__()
         self.original_model = original_model
 
@@ -319,8 +320,11 @@ class LinearizedGPT2Wrapper(nn.Module):
         for p in self.params0_values:
             p.requires_grad_(False)
 
+        # self.linearized_model = LinearizedGPT2LMHeadModel(
+        #     model.model.config, model.model, self.params0_values, self.params0_keys
+        # )
         self.linearized_model = LinearizedGPT2LMHeadModel(
-            model.model.config, model.model, self.params0_values, self.params0_keys
+            model.model
         )
 
     # def forward(self, *args, **kwargs):
