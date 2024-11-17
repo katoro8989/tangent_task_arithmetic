@@ -188,7 +188,7 @@ def finetune(rank, args, group):
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()
             
-            loss += args.penalty * penalty
+            # loss += args.penalty * penalty
 
 
             loss.backward()
