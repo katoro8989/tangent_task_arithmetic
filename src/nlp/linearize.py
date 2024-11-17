@@ -213,7 +213,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         def model_forward(*param_values):
             param_dict = self.tuple_params_to_dict(param_values)
             outputs = functional_call(
-                self.original_model, param_dict, input_ids=input_ids, **kwargs
+                self.original_model, param_dict, kwargs={'input_ids': input_ids, **kwargs}
             )
             return outputs.logits
 
@@ -230,7 +230,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
             def penalty_forward(*param_values):
                 param_dict = self.tuple_params_to_dict(param_values)
                 outputs = functional_call(
-                    self.original_model, param_dict, input_ids=penalty_input_ids, **kwargs
+                    self.original_model, param_dict, kwargs={'input_ids': penalty_input_ids, **kwargs}
                 )
                 return outputs.logits
 
