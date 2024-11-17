@@ -118,7 +118,6 @@ def finetune(rank, args, group):
         find_unused_parameters=True,
         output_device=rank,
     )
-    model._set_static_graph()
 
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
@@ -164,13 +163,14 @@ def finetune(rank, args, group):
             data_time = time.time() - start_time
 
             # モデルの出力を取得
-            logits = ddp_model(input_ids=input_ids)
+            out, dp = ddp_model(input_ids=input_ids)
+            logits = out + dp
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
 
             loss = loss_fn(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
-            penalty = torch.tensor(0)
+            penalty = torch.tensor(0, device=device)
             if iter_step > args.penalty_iter:
                 try:
                     batch_to_orth = next(ddp_train_loader_iter_orth)
@@ -179,7 +179,8 @@ def finetune(rank, args, group):
                     batch_to_orth = next(ddp_train_loader_iter_orth)
 
                 inputs_to_orth = batch_to_orth["input_ids"].to(device)
-                tau_jacob = ddp_model.module.dp(input_ids=inputs_to_orth)
+                _, dp = ddp_model(input_ids=inputs_to_orth)
+                tau_jacob = dp
                 dp_norms = torch.norm(tau_jacob, dim=1)
                 penalty = dp_norms.mean()
             
@@ -227,7 +228,8 @@ def finetune(rank, args, group):
 
                         # モデルの出力を取得
 
-                        logits = ddp_model(input_ids=input_ids)
+                        out, dp = ddp_model(input_ids=input_ids)
+                        logits = out + dp
                         shift_logits = logits[..., :-1, :].contiguous()
                         shift_labels = labels[..., 1:].contiguous()
 
