@@ -150,8 +150,8 @@ def finetune(rank, args, group):
 
     print("Starting training.")
     for epoch in range(args.epochs):
-        ddp_model.train()
         for i, batch in enumerate(ddp_train_loader):
+            ddp_model.train()
             start_time = time.time()
 
             step = (
@@ -348,7 +348,7 @@ if __name__ == '__main__':
 
     # HACK: Some command line arguments are overwritten by defaults here.
     args.world_size = 4
-    args.port = 12345
+    args.port = 12346
     args.seed = 42
 
     if args.seed is not None:
