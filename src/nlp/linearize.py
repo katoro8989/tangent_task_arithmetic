@@ -131,7 +131,7 @@ class LinearizedPreTrainedModel(PreTrainedModel):
             params0,
             dparams,
         )
-        return out + dp
+        return out.logits + dp.logits
     
     def dp(self, *args, **kwargs):
 
