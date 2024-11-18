@@ -310,7 +310,7 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         return super().generate(**kwargs)
 
 class LinearizedT5Wrapper(nn.Module):
-    def __init__(self, model: PreTrainedModel, init_model: PreTrainedModel = None):
+    def __init__(self, model: SimpleCallableHFModel, init_model: SimpleCallableHFModel = None):
         """
         Initializes a linearized model.
 
