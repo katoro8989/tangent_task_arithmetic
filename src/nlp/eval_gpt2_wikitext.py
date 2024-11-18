@@ -104,7 +104,7 @@ eval_dataloader = DataLoader(lm_datasets, batch_size=args.eval_batch_size, colla
 if args.finetuning_mode == "none":
     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=0.0)
 elif args.finetuning_mode == "standard" or args.finetuning_mode == "linear" or args.finetuning_mode == "ours":
-    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-0.1)
+    model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-1)
 
 model = model.to(device)
 model.eval()
