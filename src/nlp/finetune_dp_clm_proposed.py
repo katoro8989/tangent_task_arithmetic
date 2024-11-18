@@ -342,7 +342,7 @@ if __name__ == '__main__':
     parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
     parser.add_argument('--penalty', type=float, default=0.01)
-    parser.add_argument('--penalty_iter', type=int, default=-1)
+    parser.add_argument('--penalty_iter', type=int, default=500)
     parser.add_argument('--orth_batch_size', type=int, default=4)
     args = parser.parse_args()
 
@@ -352,7 +352,7 @@ if __name__ == '__main__':
     args.seed = 42
 
     if args.seed is not None:
-        args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}_ours/{args.model}"
+        args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}_ours_again/{args.model}"
     else:
         args.save = f"/mnt2/gpt2_civil_checkpoints_{args.model}_ours"
     
