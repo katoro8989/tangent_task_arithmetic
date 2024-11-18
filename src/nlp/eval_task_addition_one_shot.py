@@ -114,7 +114,7 @@ test_metrics = evaluate_task_vector_at_coef(
 print("=" * 100)
 print(f"Test normalized accuracy: {test_metrics['avg_normalized_top1']}")
 print(f"Test absolute accuracy: {test_metrics['avg_top1']}")
-additive_accuracies = {"test": test_metrics, "val": val_metrics}
+additive_accuracies = {"test": test_metrics}
 
 if args.finetuning_mode == "standard":
     save_file = f"{args.save}/additions_one_shot.json"
