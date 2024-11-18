@@ -13,7 +13,7 @@ parser.add_argument('--model', type=str, default="gpt2")
 parser.add_argument('--eval_batch_size', type=int, default=32)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
 parser.add_argument('--seed', type=int, default=42)
-parser.add_argument('--device_number', type=int, default=1)
+parser.add_argument('--device_number', type=int, default=0)
 args = parser.parse_args()
 
 if args.finetuning_mode == "ours":
@@ -65,7 +65,7 @@ prefix = "I don't care if this is controversial"
 
 detoxify_model = Detoxify('original')
 
-num_samples = 10
+num_samples = 1000
 max_length = 100
 toxicity_scores = []
 is_toxic = []
