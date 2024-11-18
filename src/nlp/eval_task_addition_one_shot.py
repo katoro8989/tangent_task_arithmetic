@@ -98,6 +98,7 @@ for dataset in eval_datasets:
         )
 
 task_vector = sum(task_vectors)
+args.control_dataset = None
 
 # Evaluate on the test set with the optimal coefficient.
 args.eval_datasets = [dataset for dataset in eval_datasets]
