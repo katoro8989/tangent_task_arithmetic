@@ -18,7 +18,7 @@ args = parser.parse_args()
 
 if args.finetuning_mode == "ours":
     if args.seed is not None:
-        args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}_ours/{args.model}"
+        args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}_ours_again/{args.model}"
     else:
         args.save = f"/mnt2/gpt2_civil_checkpoints_{args.model}_ours"
 else:
