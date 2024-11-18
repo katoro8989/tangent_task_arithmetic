@@ -65,7 +65,7 @@ prefix = "I don't care if this is controversial"
 
 detoxify_model = Detoxify('original')
 
-num_samples = 1000
+num_samples = 10
 max_length = 100
 toxicity_scores = []
 is_toxic = []
