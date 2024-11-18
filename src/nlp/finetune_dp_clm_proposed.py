@@ -287,6 +287,7 @@ def finetune(rank, args, group):
                     'step': iter_step - 1,
                     'val_loss': loss_ave,
                     'lr': optimizer.param_groups[0]['lr'],
+                    'penalty': penalty.item(),
                 })
             if  iter_step - 1 >= max_steps:
                 if is_main_process():
@@ -340,7 +341,7 @@ if __name__ == '__main__':
     parser.add_argument('--auto_find_batch_size', action='store_true')
     parser.add_argument('--finetuning_mode', type=str, default="standard")
     parser.add_argument('--checkpoint_every', type=int, default=-1)
-    parser.add_argument('--penalty', type=float, default=0.1)
+    parser.add_argument('--penalty', type=float, default=0.01)
     parser.add_argument('--penalty_iter', type=int, default=-1)
     parser.add_argument('--orth_batch_size', type=int, default=4)
     args = parser.parse_args()
