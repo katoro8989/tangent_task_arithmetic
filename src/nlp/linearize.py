@@ -284,8 +284,8 @@ class LinearizedGPT2LMHeadModel(GPT2LMHeadModel):
         #     dp_norms = torch.norm(dp.logits, dim=-1)
         #     penalty = dp_norms.mean()
 
-        # return out + dp, penalty
-        return CausalLMOutputWithPast(logits=out + dp)
+        return out + dp, penalty
+        # return CausalLMOutputWithPast(logits=out + dp)
     
     def dp(self, *args, **kwargs):
 
