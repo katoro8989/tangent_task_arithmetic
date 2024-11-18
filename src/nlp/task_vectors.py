@@ -200,7 +200,7 @@ class GPT2LinearizedTaskVector(_LinearizedTaskVector):
 
 def nonlinear_to_linear(nonlinear_task_vector):
     """Convert a nonlinear task vector to a linear task vector."""
-    if isinstance(nonlinear_task_vector, LinearizedTaskVector):
+    if isinstance(nonlinear_task_vector, T5LinearizedTaskVector):
         return nonlinear_task_vector
     else:
         linear_params = {
@@ -212,14 +212,14 @@ def nonlinear_to_linear(nonlinear_task_vector):
             f"model.params0.{i}": torch.zeros_like(v)
             for i, v in enumerate(nonlinear_task_vector.vector.values())
         }
-        return LinearizedTaskVector(vector=linear_params)
+        return T5LinearizedTaskVector(vector=linear_params)
 
 
 def linear_to_nonlinear(linear_task_vector, param_names):
     """Convert a linear task vector to a nonlinear task vector."""
-    if isinstance(linear_task_vector, NonLinearTaskVector):
+    if isinstance(linear_task_vector, T5NonLinearTaskVector):
         return linear_task_vector
     else:
-        return NonLinearTaskVector(
+        return T5NonLinearTaskVector(
             vector=linear_task_vector.get_named_parameters(param_names)
         )
