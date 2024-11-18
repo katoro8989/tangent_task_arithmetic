@@ -181,6 +181,9 @@ def finetune(rank, args, group):
                 penalty_input_ids=penalty_input_ids
             )
 
+            if penalty is None:
+                penalty = torch.tensor(0, device=device)
+
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
 
