@@ -97,10 +97,11 @@ def dict_params_to_tuple(dict_params: dict):
 
 
 class LinearizedPreTrainedModel(PreTrainedModel):
-    def __init__(self, config, original_model, params0_values):
+    def __init__(self, config, original_model, params0_values, params0_keys):
         super().__init__(config)
         self.original_model = original_model
         self.params0_values = params0_values
+        self.params0_keys = params0_keys
 
     def tuple_params_to_dict(self, tuple_params):
         """
@@ -327,8 +328,9 @@ class LinearizedT5Wrapper(nn.Module):
         self.params0_values = nn.ParameterList([v for k, v in params0])
         for p in self.params0_values:
             p.requires_grad_(False)
+
         self.linearized_model = LinearizedPreTrainedModel(
-            model.model.config, model.model, self.params0_values
+            model.model.config, model.model, self.params0_values, self.params0_keys
         )
 
     def forward(self, *args, **kwargs):
