@@ -121,7 +121,7 @@ with torch.no_grad():
     for key in non_zero_counts:
         disjoint_agg[key] /= torch.clamp(non_zero_counts[key], min=1)
     
-    task_vector = NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+    task_vector = T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
     for key in task_vector.vector:
         task_vector.vector[key].copy_(disjoint_agg[key])
 
