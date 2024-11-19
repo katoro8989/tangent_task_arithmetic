@@ -40,9 +40,7 @@ finetuned_checkpoint = (
 
 try:
     task_vector = (
-        GPT2LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
-        if args.finetuning_mode == "linear" or args.finetuning_mode == "ours"
-        else GPT2NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
+        GPT2NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint, len_tokenizer=len(tokenizer))
     )
 except FileNotFoundError:
     print(f"Error: Could not find {finetuned_checkpoint}.")
@@ -119,7 +117,8 @@ for scaling_coef in np.linspace(0.0, 1.0, 11):
     with torch.no_grad():
         for batch in tqdm(eval_dataloader, desc="Calculating perplexity"):
             batch = {k: v.to(device) for k, v in batch.items()}
-            outputs, _ = model(**batch)
+            # outputs, _ = model(**batch)
+            outputs = model(**batch)
             # 損失をトークン数で重み付け
             labels = batch['labels']
             shift_logits = outputs[..., :-1, :].contiguous()
