@@ -140,7 +140,7 @@ test_metrics = evaluate_task_vector_at_coef(
 print("=" * 100)
 print(f"Test normalized accuracy: {test_metrics['avg_normalized_top1']}")
 print(f"Test absolute accuracy: {test_metrics['avg_top1']}")
-additive_accuracies = {"test": test_metrics, "val": val_metrics}
+additive_accuracies = {"test": test_metrics}
 
 save_file = f"{args.save}/ties_additions_one_shot.json"
 with open(save_file, "w") as f:
