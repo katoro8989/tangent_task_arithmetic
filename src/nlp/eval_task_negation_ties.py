@@ -103,7 +103,7 @@ if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear fi
 
 best_coef = 0.0
 
-for scaling_coef in np.linspace(0.0, 1.0, 11):
+for scaling_coef in np.linspace(1.0, 1.1, 1):
 
     model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-scaling_coef)
 
