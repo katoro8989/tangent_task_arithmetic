@@ -51,7 +51,7 @@ if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear fi
             score = task_vector.vector[key].abs()
             task_vector.vector[key].mul_(torch.where(score <= threshold, 0.0, 1.0))
 
-model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-1.0)
+model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-0.1)
 
 model = model.to(device)
 
@@ -86,7 +86,7 @@ toxic_ratio = sum(is_toxic) / num_samples
 print(f"Average toxicity score for {num_samples} samples: {average_toxicity}")
 
 # save the results as txt file
-with open(f"toxicity_results_{args.model}_{args.finetuning_mode}_{args.seed}.txt", "w") as f:
+with open(f"toxicity_results_{args.model}_ties_{args.seed}.txt", "w") as f:
     f.write(f"Average toxicity score for {num_samples} samples: {average_toxicity}\n")
     f.write(f"Toxic ratio for {num_samples} samples: {toxic_ratio}\n")
     f.write("Toxicity scores:\n")
