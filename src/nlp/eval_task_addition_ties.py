@@ -125,7 +125,7 @@ with torch.no_grad():
     for key in task_vector.vector:
         task_vector.vector[key].copy_(disjoint_agg[key])
 
-args.eval_datasets = [dataset + "Val" + f"_{sparcity}" for dataset in eval_datasets]
+args.eval_datasets = [dataset + "Val" + f"_{sparsity}" for dataset in eval_datasets]
 args.control_dataset = None
 
 # We use the validation set to choose the optimal coefficient.
