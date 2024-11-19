@@ -79,6 +79,8 @@ def evaluate(model, tokenizer, args):
     )
     for dataset_name in eval_datasets:
         print("Evaluating on", dataset_name)
+        if "0." in dataset_name:
+            dataset_name = dataset_name.split("_")[0]
         if "Val" in dataset_name:
             args.task = dataset_name[:-3]
         else:
