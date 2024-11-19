@@ -66,14 +66,14 @@ for sparsity in [0.9, 0.95, 0.99]:
             continue
 
         # TIES-Merging
-       if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear finetuning
-        with torch.no_grad():
-            global_scores = torch.cat([torch.flatten(v).abs() for v in task_vector.vector.values()])
-            threshold, _ = torch.kthvalue(global_scores, int(sparsity * global_scores.numel()))
-            for key in task_vector.vector:
-                # Trim redundant params (according to global magnitude)
-                score = task_vector.vector[key].abs()
-                task_vector.vector[key].mul_(torch.where(score <= threshold, 0.0, 1.0))
+        if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear finetuning
+            with torch.no_grad():
+                global_scores = torch.cat([torch.flatten(v).abs() for v in task_vector.vector.values()])
+                threshold, _ = torch.kthvalue(global_scores, int(sparsity * global_scores.numel()))
+                for key in task_vector.vector:
+                    # Trim redundant params (according to global magnitude)
+                    score = task_vector.vector[key].abs()
+                    task_vector.vector[key].mul_(torch.where(score <= threshold, 0.0, 1.0))
 
         model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=1.0)
         
