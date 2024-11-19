@@ -72,17 +72,11 @@ for dataset in eval_datasets:
     task_vectors = T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
 
     # TIES-Merging
-    if (
-        sparsity > 0.0
-    ):  # NOTE: if sparsity == 0.0 we have the standard non-linear finetuning
+    if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear finetuning
         with torch.no_grad():
             # Trim redundant params (according to global magnitude)
-            global_scores = torch.cat(
-                [torch.flatten(v).abs() for v in task_vector.vector.values()]
-            )
-            threshold, _ = torch.kthvalue(
-                global_scores, int(sparsity * global_scores.numel())
-            )
+            global_scores = torch.cat([torch.flatten(v).abs() for v in task_vector.vector.values()])
+            threshold, _ = torch.kthvalue(global_scores, int(sparsity * global_scores.numel()))
             sgn = {}
             for key in task_vector.vector:
                 score = task_vector.vector[key].abs()
@@ -103,9 +97,7 @@ with torch.no_grad():
             else:
                 agg_task_vector[key] += vect.vector[key].clone()
 
-    majority_sign = torch.sign(
-        torch.cat([torch.flatten(v).abs() for v in agg_task_vector.values()]).sum()
-    )
+    majority_sign = torch.sign(torch.cat([torch.flatten(v).abs() for v in agg_task_vector.values()]).sum())
 
     # Disjoint merge
     non_zero_counts = {}
@@ -115,9 +107,7 @@ with torch.no_grad():
             sgn_m = torch.sign(agg_task_vector[key])
             sgn_m[sgn_m == 0] = majority_sign
 
-            rows_to_keep = torch.where(
-                sgn_m > 0, vect.vector[key] > 0, vect.vector[key] < 0
-            )
+            rows_to_keep = torch.where(sgn_m > 0, vect.vector[key] > 0, vect.vector[key] < 0)
             selected_entries = vect.vector[key] * rows_to_keep
 
             if key not in non_zero_counts:
@@ -129,11 +119,10 @@ with torch.no_grad():
 
     for key in non_zero_counts:
         disjoint_agg[key] /= torch.clamp(non_zero_counts[key], min=1)
-
-    task_vector = T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+    
+    task_vector = NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
     for key in task_vector.vector:
         task_vector.vector[key].copy_(disjoint_agg[key])
-
 
 args.eval_datasets = [dataset + "Val" for dataset in eval_datasets]
 args.control_dataset = None
