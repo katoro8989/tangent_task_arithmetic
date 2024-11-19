@@ -144,7 +144,11 @@ def evaluate_task_vector(
 
 
 def add_normalized_accuracy(results, args):
-    for dataset_name in args.eval_datasets:
+    for _dataset_name in args.eval_datasets:
+        if "0." in _dataset_name:
+            dataset_name = _dataset_name.split("_")[0]
+        else:
+            dataset_name = _dataset_name
         results[dataset_name + ":normalized_top1"] = (
             results[dataset_name + ":top1"] / args.finetuning_accuracies[dataset_name]
         )
