@@ -53,7 +53,7 @@ if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear fi
             score = task_vector.vector[key].abs()
             task_vector.vector[key].mul_(torch.where(score <= threshold, 0.0, 1.0))
 
-model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-0.1)
+model = task_vector.apply_to(pretrained_checkpoint, scaling_coef=-1.0)
 
 model = model.to(device)
 
