@@ -70,7 +70,7 @@ sign_vectors = []
 for dataset in eval_datasets:
     pretrained_checkpoint = f"{args.save}/{dataset}/zeroshot"
     finetuned_checkpoint = f"{args.save}/{dataset}/finetuned"
-    task_vectors = T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+    task_vector = T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
 
     # TIES-Merging
     if sparsity > 0.0: # NOTE: if sparsity == 0.0 we have the standard non-linear finetuning
