@@ -26,6 +26,8 @@ args = parser.parse_args()
 
 args.data_dir = "/mnt2/dataset/glue_split"
 
+sparsity = 0.9
+
 args.n_eval_points = 21
 args.eval_max_points = 1.0
 
