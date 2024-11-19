@@ -16,6 +16,8 @@ parser.add_argument('--seed', type=int, default=42)
 parser.add_argument('--device_number', type=int, default=0)
 args = parser.parse_args()
 
+sparsity = 0.9
+
 if args.seed is not None:
     args.save = f"/mnt2/gpt2_civil_checkpoints_{args.seed}/{args.model}"
 else:
