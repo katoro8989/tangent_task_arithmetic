@@ -144,7 +144,7 @@ optimal_coef = find_optimal_coef(
 )
 
 # Evaluate on the test set with the optimal coefficient.
-args.eval_datasets = [dataset for dataset in eval_datasets]
+args.eval_datasets = [dataset + f"_{sparsity}" for dataset in eval_datasets]
 test_metrics = evaluate_task_vector_at_coef(
     task_vector,
     pretrained_checkpoint,
