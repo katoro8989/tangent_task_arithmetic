@@ -1,27 +1,24 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
-
 import time
-import sys
-from tqdm import tqdm
-import torch
 import gc
-from task_vectors import T5NonLinearTaskVector
-from eval import eval_single_dataset
+import torch
 import argparse
+from tqdm import tqdm
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
-from transformers import T5ForConditionalGeneration, T5Tokenizer
 from linearize import SimpleCallableHFModel
+from task_vectors import T5NonLinearTaskVector
+from eval import eval_single_dataset
 
-
+# Utility to create log directory
 def create_log_dir(path, filename='log.txt'):
     import logging
     if not os.path.exists(path):
         os.makedirs(path)
     logger = logging.getLogger(path)
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(path+'/'+filename)
+    fh = logging.FileHandler(os.path.join(path, filename))
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
@@ -29,11 +26,13 @@ def create_log_dir(path, filename='log.txt'):
     logger.addHandler(ch)
     return logger
 
+# Datasets and model configuration
 exam_datasets = ["cola", "sst2", "mrpc", "rte"]
-model = "google/flan-t5-small"
+model_name = "google/flan-t5-small"
 
+# Argument parser
 parser = argparse.ArgumentParser(description='Finetuning of T5')
-parser.add_argument('--model', type=str, default="google/flan-t5-small")
+parser.add_argument('--model', type=str, default=model_name)
 parser.add_argument('--output_dir', type=str)
 parser.add_argument('--eval_batch_size', type=int, default=8)
 parser.add_argument('--finetuning_mode', type=str, default="standard")
@@ -41,26 +40,19 @@ parser.add_argument('--seed', type=int, default=42)
 parser.add_argument('--device_number', type=int, default=0)
 args = parser.parse_args()
 
-args.model = model
-args.seed = 42
-args.data_dir = "/mnt2/dataset/glue_split"
+# Setup environment and paths
 args.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-
-if args.seed is not None:
-    args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}"
-else:
-    args.save = f"/mnt2/t5_glue_checkpoints/{args.model}"
-
+args.data_dir = "/mnt2/dataset/glue_split"
+args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}/{args.model}" if args.seed else f"/mnt2/t5_glue_checkpoints/{args.model}"
 args.logs_path = args.save
-pretrained_checkpoint = f"{args.save}/cola/zeroshot"
+pretrained_checkpoint = os.path.join(args.save, "cola/zeroshot")
+str_time_ = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+args.log = create_log_dir(args.logs_path, f'log_{str_time_}_Task_wise_AdaMerging.txt')
 
-str_time_ = time.strftime('%Y%m%d_%H%M%S', time.localtime(time.time()))
-log = create_log_dir(args.logs_path, 'log_{}_Task_wise_AdaMerging.txt'.format(str_time_))
-args.log = log
+# Load task vectors
+task_vectors = [T5NonLinearTaskVector(pretrained_checkpoint, f"{args.save}/{dataset}/finetuned") for dataset in exam_datasets]
 
-task_vectors = [T5NonLinearTaskVector(pretrained_checkpoint, f"{args.save}/{dataset_name}/finetuned") for dataset_name in exam_datasets]
-
+# Helper functions for model manipulation
 def del_attr(obj, names):
     if len(names) == 1:
         delattr(obj, names[0])
@@ -84,123 +76,53 @@ def make_functional(mod):
 def load_weights(mod, names, params):
     for name, p in zip(names, params):
         set_attr(mod, name.split("."), p)
-   
 
-
+# Wrapper class for the model
 class ModelWrapper(torch.nn.Module):
-    def __init__(self, model, initial_weights=None):
+    def __init__(self, model):
         super(ModelWrapper, self).__init__()
         self.model = model
 
-        # if hasattr(self.model, 'transformer'):
-        #     delattr(self.model, 'transformer')
-
     def forward(self, input_ids, attention_mask, labels):
-        features = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        return features
+        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
+# Adaptive merging class
 class AdaMerging(torch.nn.Module):
-    def __init__(self, paramslist, model, names, exam_datasets):
+    def __init__(self, paramslist, model, names):
         super(AdaMerging, self).__init__()
         self.paramslist = paramslist
         self.model = model
         self.names = names
         self.pretrain_lambdas = torch.ones(1, 1)
-        prior = 0.3
-        rlambdas = torch.ones(1, len(paramslist)-1) * prior  # (1 * tasks)
-        self.lambdas_raw = torch.nn.Parameter(rlambdas)
+        self.lambdas_raw = torch.nn.Parameter(torch.ones(1, len(paramslist) - 1) * 0.3)
 
     def lambdas(self):
-        task_lambdas = torch.clamp(self.lambdas_raw, min=0.0, max=1.0)
-        lambdass = torch.cat((self.pretrain_lambdas, task_lambdas), 1)
-        return lambdass
+        task_lambdas = torch.clamp(self.lambdas_raw, 0.0, 1.0)
+        return torch.cat((self.pretrain_lambdas, task_lambdas), dim=1)
 
     def collect_trainable_params(self):
         return [self.lambdas_raw]
 
-    def get_image_encoder(self):
-        alph = self.lambdas()
-        params = tuple(sum(tuple(pi * lambdasi for pi, lambdasi in zip(p, alph[0].cpu()))) for j, p in enumerate(zip(*self.paramslist)))
-        params = tuple(p.cuda(0) for p in params)
+    def forward(self, input_ids, attention_mask, labels):
+        lambdas = self.lambdas()
+        params = [sum(pi * lambdasi for pi, lambdasi in zip(p, lambdas[0])) for p in zip(*self.paramslist)]
+        params = [p.cuda() for p in params]
         load_weights(self.model, self.names, params)
-        return self.model
+        return self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def forward(self, input_ids, attention_mask, labels, dataset_name):
-        alph = self.lambdas()
-        params = tuple(sum(tuple(pi * lambdasi for pi, lambdasi in zip(p, alph[0].cpu()))) for j, p in enumerate(zip(*self.paramslist)))
-
-        params = tuple(p.cuda(0) for p in params)
-
-        load_weights(self.model, self.names, params)
-        out = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        torch.cuda.empty_cache()
-        # alph = self.lambdas()  # Shape: (1, num_sources)
-
-        # weights = alph.view(-1)  # Shape: (num_sources,)
-
-        # blended_params = []
-
-        # for name, param_group in zip(self.names, zip(*self.paramslist)):
-        #     # param_group は各ソースからのテンソルのタプル
-        #     param_shapes = [p.shape for p in param_group]
-        #     if not all(shape == param_shapes[0] for shape in param_shapes):
-        #         raise ValueError(f"Shape mismatch in parameter '{name}'. Expected all sources to have shape {param_shapes[0]}, but got {[s for s in param_shapes]}")
-
-        #     stacked = torch.stack(param_group, dim=0)  # Shape: (num_sources, *param_shape)
-
-        #     reshaped_weights = weights.view(-1, *([1] * (stacked.dim() - 1)))  # Shape: (num_sources, 1, 1, ...)
-
-        #     blended = (stacked * reshaped_weights).sum(dim=0)  # Shape: same as individual parameter
-
-        #     if blended.shape != self.model.state_dict()[name].shape:
-        #         raise ValueError(f"Blended parameter '{name}' shape {blended.shape} does not match model parameter shape {self.model.state_dict()[name].shape}")
-
-        #     blended_params.append(blended)
-
-        # # モデルのパラメータを直接更新（torch.no_grad()コンテキスト内で）
-        # with torch.no_grad():
-        #     for name, blended in zip(self.names, blended_params):
-        #         if name in self.model.state_dict():
-        #             self.model.state_dict()[name].copy_(blended.to(self.device))
-        #         else:
-        #             print(f"Parameter '{name}' not found in the model's state_dict.")
-
-        # # フォワードパス
-        # out = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-        # torch.cuda.empty_cache()
-
-        return out
-
-def softmax_entropy(x):
-    return -(x.softmax(1) * x.log_softmax(1)).sum(1)
-
+# Tokenizer and model initialization
 tokenizer = T5Tokenizer.from_pretrained(args.model)
-
-def collate_fn(batch):
-    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
-    input_ids = torch.tensor([item['input_ids'] for item in batch])
-    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
-    labels = torch.tensor([item['labels'] for item in batch])
-    
-    return {
-        'input_ids': input_ids,
-        'attention_mask': attention_mask,
-        'labels': labels
-    }
-
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
 pretrained_model = SimpleCallableHFModel(hf_t5_model)
-pretrained_model_dic = hf_t5_model.state_dict()
-
-model = ModelWrapper(pretrained_model, exam_datasets)
-model = model.to(args.device)
+model = ModelWrapper(pretrained_model).to(args.device)
 _, names = make_functional(model)
 
-paramslist = []
-paramslist += [tuple(v.detach().requires_grad_().cpu() for _, v in pretrained_model_dic.items())] # pretrain
-paramslist += [tuple(v.detach().requires_grad_().cpu() for _, v in tv.vector.items())  for i, tv in enumerate(task_vectors)] # task vectors
-torch.cuda.empty_cache()
-adamerging_mtl_model = AdaMerging(paramslist, model, names, exam_datasets)
+# Parameter list
+paramslist = [tuple(v.detach().cpu().requires_grad_(False) for _, v in hf_t5_model.state_dict().items())]
+paramslist += [tuple(v.detach().cpu().requires_grad_(False) for _, v in tv.vector.items()) for tv in task_vectors]
+
+# Initialize AdaMerging
+adamerging_mtl_model = AdaMerging(paramslist, model, names)
 
 print('init lambda:')
 print(adamerging_mtl_model.lambdas())
