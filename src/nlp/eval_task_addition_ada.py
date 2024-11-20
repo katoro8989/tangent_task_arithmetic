@@ -204,9 +204,9 @@ for epoch in tqdm(range(epochs), desc="Training"):
             data_iter = data_iters[dataset_name]
             data = next(data_iter)
         log_memory_usage(f"After Getting Data")
-        input_ids = batch['input_ids'].to(device)
-        attention_mask = batch['attention_mask'].to(device)
-        labels = batch['labels'].to(device)
+        input_ids = data['input_ids'].to(device)
+        attention_mask = data['attention_mask'].to(device)
+        labels = data['labels'].to(device)
 
         log_memory_usage(f"Before Prediction")
         outputs = adamerging_mtl_model(input_ids, attention_mask, labels, dataset_name)
