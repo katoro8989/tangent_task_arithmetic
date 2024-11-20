@@ -6,9 +6,9 @@ import sys
 from tqdm import tqdm
 import torch
 import gc
-from src.task_vectors import T5NonLinearTaskVector
-from src.eval import eval_single_dataset, eval_single_dataset_head, eval_single_dataset_preprocess_head
-from src.args import parse_arguments
+from task_vectors import T5NonLinearTaskVector
+from eval import eval_single_dataset, eval_single_dataset_head, eval_single_dataset_preprocess_head
+import argparse
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
 from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -31,7 +31,16 @@ def create_log_dir(path, filename='log.txt'):
 
 exam_datasets = ["cola", "sst2", "mrpc", "rte"]
 model = "google/flan-t5-small"
-args = parse_arguments()
+
+parser = argparse.ArgumentParser(description='Finetuning of T5')
+parser.add_argument('--model', type=str, default="google/flan-t5-small")
+parser.add_argument('--output_dir', type=str)
+parser.add_argument('--eval_batch_size', type=int, default=8)
+parser.add_argument('--finetuning_mode', type=str, default="standard")
+parser.add_argument('--seed', type=int, default=42)
+parser.add_argument('--device_number', type=int, default=0)
+args = parser.parse_args()
+
 args.model = model
 args.seed = 42
 args.data_dir = "/mnt2/dataset/glue_split"
