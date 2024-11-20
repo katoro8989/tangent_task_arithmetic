@@ -190,12 +190,7 @@ def collate_fn(batch):
 
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
 pretrained_model = SimpleCallableHFModel(hf_t5_model)
-pretrained_model_dic = pretrained_model.state_dict()
-
-for i, tv in enumerate(task_vectors):
-    for (param_name_pre, param_pre), (param_name_tv, param_tv) in zip(pretrained_model_dic.items(), tv.vector.items()):
-        if param_pre.shape != param_tv.shape:
-            print(f"Task Vector {i} - Parameter '{param_name_tv}' shape mismatch: pretrained {param_pre.shape}, task vector {param_tv.shape}")
+pretrained_model_dic = hf_t5_model.state_dict()
 
 model = ModelWrapper(pretrained_model, exam_datasets)
 model = model.to(args.device)
