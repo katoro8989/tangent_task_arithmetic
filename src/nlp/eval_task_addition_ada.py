@@ -125,14 +125,14 @@ class AdaMerging(torch.nn.Module):
         load_weights(self.model, self.names, params)
         return self.model
 
-    def forward(self, inp, dataset_name):
+    def forward(self, input_ids, attention_mask, labels, dataset_name):
         alph = self.lambdas()
         params = tuple(sum(tuple(pi * lambdasi for pi, lambdasi in zip(p, alph[0].cpu()))) for j, p in enumerate(zip(*self.paramslist)))
 
         params = tuple(p.cuda(0) for p in params)
 
         load_weights(self.model, self.names, params)
-        feature = self.model(inp)
+        feature = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         torch.cuda.empty_cache()
 
         return out
