@@ -73,35 +73,17 @@ def set_attr(obj, names, val):
     else:
         set_attr(getattr(obj, names[0]), names[1:], val)
 
-# def make_functional(mod):
-#     orig_params = tuple(mod.parameters())
-#     names = []
-#     for name, p in list(mod.named_parameters()):
-#         del_attr(mod, name.split("."))
-#         names.append(name)
-#     return orig_params, names
 def make_functional(mod):
     orig_params = tuple(mod.parameters())
-    names = [name for name, _ in mod.named_parameters()]
+    names = []
+    for name, p in list(mod.named_parameters()):
+        del_attr(mod, name.split("."))
+        names.append(name)
     return orig_params, names
 
-# def load_weights(mod, names, params):
-#     for name, p in zip(names, params):
-#         set_attr(mod, name.split("."), p)
 def load_weights(mod, names, params):
     for name, p in zip(names, params):
-        attr = mod
-        parts = name.split(".")
-        for part in parts[:-1]:
-            attr = getattr(attr, part)
-        param_name = parts[-1]
-        current_param = getattr(attr, param_name)
-        if isinstance(current_param, torch.nn.Parameter):
-            if current_param.data.shape != p.shape:
-                raise ValueError(f"Shape mismatch for parameter '{name}': model expects {current_param.data.shape}, but got {p.shape}")
-            current_param.data.copy_(p)
-        else:
-            setattr(attr, param_name, p)
+        set_attr(mod, name.split("."), p)
    
 
 
@@ -209,6 +191,11 @@ def collate_fn(batch):
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
 pretrained_model = SimpleCallableHFModel(hf_t5_model)
 pretrained_model_dic = pretrained_model.state_dict()
+
+for i, tv in enumerate(task_vectors):
+    for (param_name_pre, param_pre), (param_name_tv, param_tv) in zip(pretrained_model_dic.items(), tv.vector.items()):
+        if param_pre.shape != param_tv.shape:
+            print(f"Task Vector {i} - Parameter '{param_name_tv}' shape mismatch: pretrained {param_pre.shape}, task vector {param_tv.shape}")
 
 model = ModelWrapper(pretrained_model, exam_datasets)
 model = model.to(args.device)
