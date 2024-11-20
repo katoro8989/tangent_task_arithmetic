@@ -73,12 +73,16 @@ def set_attr(obj, names, val):
     else:
         set_attr(getattr(obj, names[0]), names[1:], val)
 
+# def make_functional(mod):
+#     orig_params = tuple(mod.parameters())
+#     names = []
+#     for name, p in list(mod.named_parameters()):
+#         del_attr(mod, name.split("."))
+#         names.append(name)
+#     return orig_params, names
 def make_functional(mod):
     orig_params = tuple(mod.parameters())
-    names = []
-    for name, p in list(mod.named_parameters()):
-        del_attr(mod, name.split("."))
-        names.append(name)
+    names = [name for name, _ in mod.named_parameters()]
     return orig_params, names
 
 def load_weights(mod, names, params):
