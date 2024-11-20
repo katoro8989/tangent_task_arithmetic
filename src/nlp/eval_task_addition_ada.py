@@ -44,6 +44,7 @@ args = parser.parse_args()
 args.model = model
 args.seed = 42
 args.data_dir = "/mnt2/dataset/glue_split"
+args.device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 if args.seed is not None:
