@@ -177,7 +177,7 @@ for epoch in tqdm(range(epochs), desc="Training"):
         labels = data['labels'].to(args.device)
 
         log_memory_usage(f"Before Prediction")
-        outputs = adamerging_mtl_model(input_ids, attention_mask, labels, dataset_name)
+        outputs = adamerging_mtl_model(input_ids, attention_mask, labels)
         log_memory_usage(f"After Prediction")
         loss = softmax_entropy(outputs).mean(0)
         losses += loss
