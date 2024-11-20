@@ -7,7 +7,7 @@ from tqdm import tqdm
 import torch
 import gc
 from task_vectors import T5NonLinearTaskVector
-from eval import eval_single_dataset, eval_single_dataset_head, eval_single_dataset_preprocess_head
+from eval import eval_single_dataset
 import argparse
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
