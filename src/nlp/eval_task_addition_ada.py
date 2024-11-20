@@ -98,7 +98,6 @@ class ModelWrapper(torch.nn.Module):
         features = self.model(images)
         return features
 
-from src.heads import get_classification_head
 class AdaMerging(torch.nn.Module):
     def __init__(self, paramslist, model, names, exam_datasets):
         super(AdaMerging, self).__init__()
@@ -176,9 +175,6 @@ print(list(adamerging_mtl_model.collect_trainable_params()))
 epochs = 500
 optimizer = torch.optim.Adam(adamerging_mtl_model.collect_trainable_params(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.)
 accumulation_steps = 8
-
-from src.datasets.registry import get_dataset
-from src.datasets.common import get_dataloader, maybe_dictionarize
 
 dataloaders = {}
 for dataset_name in exam_datasets:
