@@ -85,9 +85,23 @@ def make_functional(mod):
     names = [name for name, _ in mod.named_parameters()]
     return orig_params, names
 
+# def load_weights(mod, names, params):
+#     for name, p in zip(names, params):
+#         set_attr(mod, name.split("."), p)
 def load_weights(mod, names, params):
     for name, p in zip(names, params):
-        set_attr(mod, name.split("."), p)
+        attr = mod
+        parts = name.split(".")
+        for part in parts[:-1]:
+            attr = getattr(attr, part)
+        param_name = parts[-1]
+        current_param = getattr(attr, param_name)
+        if isinstance(current_param, torch.nn.Parameter):
+            if current_param.data.shape != p.shape:
+                raise ValueError(f"Shape mismatch for parameter '{name}': model expects {current_param.data.shape}, but got {p.shape}")
+            current_param.data.copy_(p)
+        else:
+            setattr(attr, param_name, p)
    
 
 
