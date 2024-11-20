@@ -95,8 +95,8 @@ class ModelWrapper(torch.nn.Module):
         if hasattr(self.model, 'transformer'):
             delattr(self.model, 'transformer')
 
-    def forward(self, images):
-        features = self.model(images)
+    def forward(self, input_ids=input_ids, attention_mask=attention_mask, labels=labels):
+        features = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         return features
 
 class AdaMerging(torch.nn.Module):
@@ -155,10 +155,10 @@ def collate_fn(batch):
     }
 
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
-model = SimpleCallableHFModel(hf_t5_model)
-pretrained_model_dic = model.state_dict()
+pretrained_model = SimpleCallableHFModel(hf_t5_model)
+pretrained_model_dic = pretrained_model.state_dict()
 
-# model = ModelWrapper(pretrained_model, exam_datasets)
+model = ModelWrapper(pretrained_model, exam_datasets)
 model = model.to(args.device)
 _, names = make_functional(model)
 
