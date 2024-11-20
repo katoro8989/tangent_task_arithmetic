@@ -92,8 +92,8 @@ class ModelWrapper(torch.nn.Module):
         super(ModelWrapper, self).__init__()
         self.model = model
 
-        if hasattr(self.model, 'transformer'):
-            delattr(self.model, 'transformer')
+        # if hasattr(self.model, 'transformer'):
+        #     delattr(self.model, 'transformer')
 
     def forward(self, input_ids, attention_mask, labels):
         features = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
