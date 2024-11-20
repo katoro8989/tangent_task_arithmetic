@@ -11,7 +11,7 @@ from src.eval import eval_single_dataset, eval_single_dataset_head, eval_single_
 from src.args import parse_arguments
 from datasets import load_from_disk
 from torch.utils.data import DataLoader
-from transformers import T5ForConditionalGeneration
+from transformers import T5ForConditionalGeneration, T5Tokenizer
 from linearize import SimpleCallableHFModel
 
 
@@ -131,6 +131,20 @@ class AdaMerging(torch.nn.Module):
 def softmax_entropy(x):
     return -(x.softmax(1) * x.log_softmax(1)).sum(1)
 
+tokenizer = T5Tokenizer.from_pretrained(args.model)
+
+def collate_fn(batch):
+    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }
+
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
 pretrained_model = SimpleCallableHFModel(hf_t5_model)
 pretrained_model_dic = pretrained_model.state_dict()
@@ -212,9 +226,9 @@ for epoch in tqdm(range(epochs), desc="Training"):
 
         Total_ACC = 0.
         for dataset_name in exam_datasets:
-            image_encoder = adamerging_mtl_model.get_image_encoder()
-            classification_head = adamerging_mtl_model.get_classification_head(dataset_name)
-            metrics = eval_single_dataset_preprocess_head(image_encoder, classification_head, dataset_name, args)
+            model = adamerging_mtl_model.get_image_encoder()
+            eval_dataloader = dataloaders[dataset_name]
+            metrics = eval_single_dataset(model, tokenizer, eval_dataloader, args)
             Total_ACC += metrics['top1']
             log.info('Eval: Epoch: ' + str(epoch) + ' dataset: ' + str(dataset_name) + ' ACC: ' + str(metrics['top1']))
         log.info('Eval: Epoch: ' + str(epoch) + ' Avg ACC:' + str(Total_ACC / len(exam_datasets)) + '\n')
