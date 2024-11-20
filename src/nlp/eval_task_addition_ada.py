@@ -155,10 +155,10 @@ def collate_fn(batch):
     }
 
 hf_t5_model = T5ForConditionalGeneration.from_pretrained(pretrained_checkpoint)
-pretrained_model = SimpleCallableHFModel(hf_t5_model)
+model = SimpleCallableHFModel(hf_t5_model)
 pretrained_model_dic = pretrained_model.state_dict()
 
-model = ModelWrapper(pretrained_model, exam_datasets)
+# model = ModelWrapper(pretrained_model, exam_datasets)
 model = model.to(args.device)
 _, names = make_functional(model)
 
