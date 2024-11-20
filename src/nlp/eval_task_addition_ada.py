@@ -77,6 +77,18 @@ def load_weights(mod, names, params):
     for name, p in zip(names, params):
         set_attr(mod, name.split("."), p)
 
+def collate_fn(batch):
+    # 各バッチの要素（例: input_ids, attention_mask, labels）をテンソルに変換
+    input_ids = torch.tensor([item['input_ids'] for item in batch])
+    attention_mask = torch.tensor([item['attention_mask'] for item in batch])
+    labels = torch.tensor([item['labels'] for item in batch])
+    
+    return {
+        'input_ids': input_ids,
+        'attention_mask': attention_mask,
+        'labels': labels
+    }
+
 # Wrapper class for the model
 class ModelWrapper(torch.nn.Module):
     def __init__(self, model):
