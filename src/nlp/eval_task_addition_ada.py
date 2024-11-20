@@ -126,13 +126,47 @@ class AdaMerging(torch.nn.Module):
         return self.model
 
     def forward(self, input_ids, attention_mask, labels, dataset_name):
-        alph = self.lambdas()
-        params = tuple(sum(tuple(pi * lambdasi for pi, lambdasi in zip(p, alph[0].cpu()))) for j, p in enumerate(zip(*self.paramslist)))
+        # alph = self.lambdas()
+        # params = tuple(sum(tuple(pi * lambdasi for pi, lambdasi in zip(p, alph[0].cpu()))) for j, p in enumerate(zip(*self.paramslist)))
 
-        params = tuple(p.cuda(0) for p in params)
+        # params = tuple(p.cuda(0) for p in params)
 
-        load_weights(self.model, self.names, params)
-        feature = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        # load_weights(self.model, self.names, params)
+        # out = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
+        # torch.cuda.empty_cache()
+        alph = self.lambdas()  # Shape: (1, num_sources)
+
+        weights = alph.view(-1)  # Shape: (num_sources,)
+
+        blended_params = []
+
+        for name, param_group in zip(self.names, zip(*self.paramslist)):
+            # param_group は各ソースからのテンソルのタプル
+            param_shapes = [p.shape for p in param_group]
+            if not all(shape == param_shapes[0] for shape in param_shapes):
+                raise ValueError(f"Shape mismatch in parameter '{name}'. Expected all sources to have shape {param_shapes[0]}, but got {[s for s in param_shapes]}")
+
+            stacked = torch.stack(param_group, dim=0)  # Shape: (num_sources, *param_shape)
+
+            reshaped_weights = weights.view(-1, *([1] * (stacked.dim() - 1)))  # Shape: (num_sources, 1, 1, ...)
+
+            blended = (stacked * reshaped_weights).sum(dim=0)  # Shape: same as individual parameter
+
+            if blended.shape != self.model.state_dict()[name].shape:
+                raise ValueError(f"Blended parameter '{name}' shape {blended.shape} does not match model parameter shape {self.model.state_dict()[name].shape}")
+
+            blended_params.append(blended)
+
+        # モデルのパラメータを直接更新（torch.no_grad()コンテキスト内で）
+        with torch.no_grad():
+            for name, blended in zip(self.names, blended_params):
+                if name in self.model.state_dict():
+                    self.model.state_dict()[name].copy_(blended.to(self.device))
+                else:
+                    print(f"Parameter '{name}' not found in the model's state_dict.")
+
+        # フォワードパス
+        out = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
         torch.cuda.empty_cache()
 
         return out
