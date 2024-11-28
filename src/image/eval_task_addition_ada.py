@@ -27,7 +27,7 @@ def create_log_dir(path, filename='log.txt'):
     return logger
 
 exam_datasets = ['SUN397', 'Cars', 'RESISC45', 'EuroSAT', 'SVHN', 'GTSRB', 'MNIST', 'DTD'] # SUN397 | Cars | RESISC45 | EuroSAT | SVHN | GTSRB | MNIST | DTD
-model = 'ViT-L-14'
+model = 'ViT-B-32'
 args = parse_arguments()
 args.model = model
 
@@ -169,7 +169,7 @@ optimizer = torch.optim.Adam(adamerging_mtl_model.collect_trainable_params(), lr
 from src.datasets.registry import get_dataset
 from src.datasets.common import get_dataloader, maybe_dictionarize, get_dataloader_shuffle
 
-dataloaders = {dataset_name: get_dataloader_shuffle(get_dataset(dataset_name, pretrained_model.val_preprocess, location=args.data_location, batch_size=1)) for dataset_name in exam_datasets}
+dataloaders = {dataset_name: get_dataloader_shuffle(get_dataset(dataset_name, pretrained_model.val_preprocess, location=args.data_location, batch_size=16)) for dataset_name in exam_datasets}
 data_iters = {dataset_name: iter(dataloaders[dataset_name]) for dataset_name in exam_datasets}
 
 for epoch in tqdm(range(epochs), desc="Training"):
