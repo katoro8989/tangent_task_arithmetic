@@ -10,6 +10,7 @@ import gc
 from src.task_vectors import NonLinearTaskVector
 from src.eval import eval_single_dataset, eval_single_dataset_head, eval_single_dataset_preprocess_head
 from src.args import parse_arguments
+import wandb
 
 def create_log_dir(path, filename='log.txt'):
     import logging
@@ -29,6 +30,11 @@ exam_datasets = ['SUN397', 'Cars', 'RESISC45', 'EuroSAT', 'SVHN', 'GTSRB', 'MNIS
 model = 'ViT-L-14'
 args = parse_arguments()
 args.model = model
+
+run = wandb.init(config=vars(args), 
+                 project=f"{args.model}_ada",
+                 entity='katoro13',
+                 )
 
 if args.seed is not None:
     args.save = f"/mnt/data/checkpoints{args.seed}/{args.model}"
@@ -196,7 +202,7 @@ for epoch in tqdm(range(epochs), desc="Training"):
     losses.backward()
     optimizer.step()
 
-    if ((epoch+1) % 500) == 0:
+    if ((epoch+1) % 10) == 0:
         log.info(str(list(adamerging_mtl_model.lambdas().data)))
 
         Total_ACC = 0.
@@ -207,3 +213,8 @@ for epoch in tqdm(range(epochs), desc="Training"):
             Total_ACC += metrics['top1']
             log.info('Eval: Epoch: ' + str(epoch) + ' dataset: ' + str(dataset_name) + ' ACC: ' + str(metrics['top1']))
         log.info('Eval: Epoch: ' + str(epoch) + ' Avg ACC:' + str(Total_ACC / len(exam_datasets)) + '\n')
+        run.log({
+            'step': epoch, 
+            'loss': losses, 
+            'acc': Total_ACC / len(exam_datasets), 
+        })
