@@ -162,8 +162,11 @@ print(list(adamerging_mtl_model.collect_trainable_params()))
 epochs = 500
 optimizer = torch.optim.Adam(adamerging_mtl_model.collect_trainable_params(), lr=1e-3, betas=(0.9, 0.999), weight_decay=0.)
 
-from datasets.registry import get_dataset
-from datasets.common import get_dataloader, maybe_dictionarize, get_dataloader_shuffle
+from src.datasets.registry import get_dataset
+from src.datasets.common import get_dataloader, maybe_dictionarize, get_dataloader_shuffle
+
+dataloaders = {dataset_name: get_dataloader_shuffle(get_dataset(dataset_name, pretrained_model.val_preprocess, location=args.data_location, batch_size=16)) for dataset_name in exam_datasets}
+data_iters = {dataset_name: iter(dataloaders[dataset_name]) for dataset_name in exam_datasets}
 
 Total_ACC = 0.
 for dataset_name in exam_datasets:
