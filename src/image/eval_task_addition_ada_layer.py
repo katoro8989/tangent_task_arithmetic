@@ -168,20 +168,11 @@ from src.datasets.common import get_dataloader, maybe_dictionarize, get_dataload
 dataloaders = {dataset_name: get_dataloader_shuffle(get_dataset(dataset_name, pretrained_model.val_preprocess, location=args.data_location, batch_size=16)) for dataset_name in exam_datasets}
 data_iters = {dataset_name: iter(dataloaders[dataset_name]) for dataset_name in exam_datasets}
 
-Total_ACC = 0.
-for dataset_name in exam_datasets:
-    image_encoder = adamerging_mtl_model.get_image_encoder()
-    classification_head = adamerging_mtl_model.get_classification_head(dataset_name)
-    metrics = eval_single_dataset_preprocess_head(image_encoder, classification_head, dataset_name, args)
-    Total_ACC += metrics['top1']
-    log.info('Eval: init: ' + ' dataset: ' + str(dataset_name) + ' ACC: ' + str(metrics['top1']))
-log.info('Eval: init: ' + ' Avg ACC:' + str(Total_ACC / len(exam_datasets)) + '\n')
-
 for epoch in range(epochs):
+    start_time = time.time()
     losses = 0.
     for dataset_name in exam_datasets:
-        dataset = get_dataset(dataset_name, pretrained_model.val_preprocess, location=args.data_location, batch_size=16)
-        dataloader = get_dataloader_shuffle(dataset)
+        dataloader = dataloaders[dataset_name]
 
         for i, data in enumerate(tqdm.tqdm(dataloader)):
             data = maybe_dictionarize(data)
@@ -198,6 +189,9 @@ for epoch in range(epochs):
     optimizer.zero_grad()
     losses.backward()
     optimizer.step()
+
+    end_time = time.time()
+    print("TIME", end_time - start_time)
 
     print(list(adamerging_mtl_model.lambdas().data))
 
