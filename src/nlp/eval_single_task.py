@@ -7,7 +7,7 @@ import torch
 import argparse
 from eval import eval_single_dataset
 from linearize import LinearizedT5Wrapper
-from task_vectors import T5LinearizedTaskVector, NonLinearTaskVector
+from task_vectors import T5LinearizedTaskVector, T5NonLinearTaskVector
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from torch.utils.data import DataLoader
 
@@ -77,7 +77,7 @@ for dataset in [
         task_vector = (
             T5LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
             if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
-            else NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+            else T5NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
         )
     except FileNotFoundError:
         print(f"Error: Could not find {finetuned_checkpoint}.")
