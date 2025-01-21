@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='Finetuning of T5')
 parser.add_argument('--model', type=str, default="google/flan-t5-small")
 parser.add_argument('--output_dir', type=str)
 parser.add_argument('--eval_batch_size', type=int, default=8)
-parser.add_argument('--finetuning_mode', type=str, default="standard")
+parser.add_argument('--finetuning_mode', type=str, default="linear")
 parser.add_argument('--seed', type=int, default=42)
 parser.add_argument('--device_number', type=int, default=0)
 args = parser.parse_args()
@@ -51,9 +51,9 @@ elif args.finetuning_mode == "posthoc":
     print("Evaluating post-hoc linearized models.")
 
 for dataset in [
-    "cola",
-    "mrpc",
-    "rte",
+    # "cola",
+    # "mrpc",
+    # "rte",
     "sst2",
 ]:
     print("*" * 100)
@@ -133,7 +133,7 @@ elif args.finetuning_mode == "standard":
     save_path = f"{args.save}/ft_accuracies.json"
 elif args.finetuning_mode == "linear":
     # save_path = f"{args.save}/linear_ft_accuracies.json"
-    save_path = f"{args.save}/linear_ft_accuracies_ours.json"
+    save_path = f"{args.save}/linear_ft_accuracies_debug.json"
 elif args.finetuning_mode == "posthoc":
     save_path = f"{args.save}/posthoc_ft_accuracies.json"
 
