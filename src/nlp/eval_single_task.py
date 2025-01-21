@@ -32,10 +32,10 @@ if args.seed is not None:
 else:
     args.save = f"/mnt2/t5_glue_checkpoints_{args.model}"
 
-if args.seed is not None:
-    args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
-else:
-    args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
+# if args.seed is not None:
+#     args.save = f"/mnt2/t5_glue_checkpoints_{args.seed}_ours/{args.model}"
+# else:
+#     args.save = f"/mnt2/t5_glue_checkpoints_{args.model}_ours"
 
 accuracies = {}
 
