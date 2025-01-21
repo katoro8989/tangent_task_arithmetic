@@ -6,8 +6,8 @@ import torch
 
 import argparse
 from eval import eval_single_dataset
-from linearize import LinearizedModelWrapper
-from task_vectors import LinearizedTaskVector, NonLinearTaskVector
+from linearize import LinearizedT5Wrapper
+from task_vectors import T5LinearizedTaskVector, NonLinearTaskVector
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from torch.utils.data import DataLoader
 
@@ -75,7 +75,7 @@ for dataset in [
 
     try:
         task_vector = (
-            LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
+            T5LinearizedTaskVector(pretrained_checkpoint, finetuned_checkpoint)
             if args.finetuning_mode == "linear" or args.finetuning_mode == "none"
             else NonLinearTaskVector(pretrained_checkpoint, finetuned_checkpoint)
         )
