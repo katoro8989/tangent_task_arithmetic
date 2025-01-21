@@ -40,22 +40,13 @@ def eval_single_dataset(model, tokenizer, eval_dataloader, args):
 
             preds = torch.argmax(logits, dim=-1)
 
-            print("preds", preds)
-            print("labels", labels)
 
             mask = labels != -100
-            preds = preds[mask]
-            labels = labels[mask]
-
-            print("preds", preds)
-            print("labels", labels)
+            preds = preds[mask].view(-1, 2)
+            labels = labels[mask].view(-1, 2)
 
             predictions = tokenizer.batch_decode(preds, skip_special_tokens=True)
             labels = tokenizer.batch_decode(labels, skip_special_tokens=True)
-
-            print("predictions", predictions)
-            print("labels", labels)
-            break
 
             # Convert decoded predictions and labels to numpy arrays
             all_preds.extend(predictions)
