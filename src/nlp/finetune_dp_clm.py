@@ -11,6 +11,8 @@ import wandb
 import uuid
 from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import accuracy_score, matthews_corrcoef
+from itertools import chain
+
 
 from dataset_preprocess.glue_process import get_preprocessor, get_map_kwargs
 from linearize import LinearizedGPT2Wrapper, SimpleCallableHFModel
